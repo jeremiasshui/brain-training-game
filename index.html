@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>療癒系左右腦訓練</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            background: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 50%, #ffd3b6 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 35px;
+            max-width: 650px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(108, 196, 152, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #6cc498;
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(108, 196, 152, 0.2);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7ba98f;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .achievement-banner {
+            background: linear-gradient(135deg, #a8e6cf 0%, #6cc498 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            display: none;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        .achievement-banner.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: #f0f9f4;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 2px solid #a8e6cf;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            color: #7ba98f;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #6cc498;
+        }
+
+        .game-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+
+        .game-btn {
+            background: linear-gradient(135deg, #a8e6cf 0%, #6cc498 100%);
+            color: white;
+            border: none;
+            padding: 30px;
+            font-size: 22px;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(108, 196, 152, 0.3);
+        }
+
+        .game-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(108, 196, 152, 0.4);
+        }
+
+        .game-btn:active {
+            transform: translateY(-2px);
+        }
+
+        .game-area {
+            min-height: 400px;
+            display: none;
+        }
+
+        .game-area.active {
+            display: block;
+        }
+
+        .score-board {
+            background: linear-gradient(135deg, #ffd3b6 0%, #ffaaa5 100%);
+            padding: 18px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 10px rgba(255, 170, 165, 0.3);
+        }
+
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .memory-card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #a8e6cf 0%, #6cc498 100%);
+            border: none;
+            border-radius: 12px;
+            font-size: 42px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(108, 196, 152, 0.3);
+        }
+
+        .memory-card:hover {
+            transform: scale(1.08);
+        }
+
+        .memory-card.flipped {
+            background: white;
+            border: 3px solid #6cc498;
+        }
+
+        .memory-card.matched {
+            background: linear-gradient(135deg, #ffd3b6 0%, #ffaaa5 100%);
+            cursor: default;
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .number-display {
+            background: linear-gradient(135deg, #f0f9f4 0%, #e8f5e9 100%);
+            padding: 45px;
+            border-radius: 18px;
+            text-align: center;
+            font-size: 52px;
+            font-weight: bold;
+            color: #6cc498;
+            margin: 20px 0;
+            min-height: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #a8e6cf;
+        }
+
+        .number-input {
+            width: 100%;
+            padding: 22px;
+            font-size: 30px;
+            border: 3px solid #6cc498;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            background: #f0f9f4;
+            transition: all 0.3s ease;
+        }
+
+        .number-input:focus {
+            outline: none;
+            border-color: #4db380;
+            box-shadow: 0 0 15px rgba(108, 196, 152, 0.3);
+        }
+
+        .action-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #ffd3b6 0%, #ffaaa5 100%);
+            color: white;
+            border: none;
+            padding: 22px;
+            font-size: 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 170, 165, 0.3);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 170, 165, 0.4);
+        }
+
+        .action-btn.secondary {
+            background: linear-gradient(135deg, #a8e6cf 0%, #6cc498 100%);
+        }
+
+        .color-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .color-btn {
+            padding: 42px;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-btn:hover {
+            transform: scale(1.08);
+            border-color: #6cc498;
+            box-shadow: 0 6px 15px rgba(108, 196, 152, 0.3);
+        }
+
+        .message {
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 18px;
+            border-radius: 12px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .message.success {
+            background: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 100%);
+            color: #2d5f3f;
+        }
+
+        .message.error {
+            background: linear-gradient(135deg, #ffd3b6 0%, #ffaaa5 100%);
+            color: #8b3a3a;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            font-size: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 25px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(165, 214, 167, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(165, 214, 167, 0.4);
+        }
+
+        .instructions {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 20px;
+            color: #558b2f;
+            text-align: center;
+            font-weight: 500;
+            border: 2px solid #c8e6c9;
+        }
+
+        .encouragement-box {
+            background: linear-gradient(135deg, #fff9c4 0%, #ffe082 100%);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 20px;
+            color: #f57f17;
+            font-weight: bold;
+            margin-top: 15px;
+            border: 2px solid #ffd54f;
+        }
+
+        .streak-indicator {
+            display: inline-block;
+            background: linear-gradient(135deg, #ffaaa5 0%, #ffd3b6 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 18px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🌿 療癒左右腦訓練 🌿</h1>
+        <p class="subtitle">每天進步一點點，大腦更健康！</p>
+
+        <div class="achievement-banner" id="achievementBanner"></div>
+
+        <div class="stats-bar" id="statsBar" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-label">今日分數</div>
+                <div class="stat-value" id="totalScore">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">連續答對</div>
+                <div class="stat-value" id="streakCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">完成遊戲</div>
+                <div class="stat-value" id="gamesPlayed">0</div>
+            </div>
+        </div>
+
+        <div class="game-selector" id="gameSelector">
+            <button class="game-btn" onclick="startGame('memory')">
+                🎴<br>記憶卡片<br><small>(右腦訓練)</small>
+            </button>
+            <button class="game-btn" onclick="startGame('number')">
+                🔢<br>數字記憶<br><small>(左腦訓練)</small>
+            </button>
+            <button class="game-btn" onclick="startGame('color')">
+                🎨<br>顏色配對<br><small>(右腦訓練)</small>
+            </button>
+            <button class="game-btn" onclick="startGame('math')">
+                ➕<br>快速計算<br><small>(左腦訓練)</small>
+            </button>
+        </div>
+
+        <!-- 記憶卡片遊戲 -->
+        <div class="game-area" id="memoryGame">
+            <div class="instructions">翻開卡片，找出相同的配對！慢慢來，不要著急～</div>
+            <div class="score-board">
+                配對成功：<span id="memoryScore">0</span> / 8
+                <span class="streak-indicator" id="memoryStreak" style="display:none;"></span>
+            </div>
+            <div class="memory-grid" id="memoryGrid"></div>
+            <div id="memoryMessage"></div>
+            <button class="back-btn" onclick="backToMenu()">返回選單</button>
+        </div>
+
+        <!-- 數字記憶遊戲 -->
+        <div class="game-area" id="numberGame">
+            <div class="instructions">記住數字順序，然後輸入！慢慢記，記得越多越厲害～</div>
+            <div class="score-board">
+                當前關卡：<span id="numberLevel">1</span> | 分數：<span id="numberScore">0</span>
+                <span class="streak-indicator" id="numberStreak" style="display:none;"></span>
+            </div>
+            <div class="number-display" id="numberDisplay">準備好了嗎？</div>
+            <input type="text" class="number-input" id="numberInput" placeholder="輸入數字..." style="display:none;">
+            <button class="action-btn" id="numberStartBtn" onclick="startNumberGame()">開始遊戲</button>
+            <button class="action-btn secondary" id="numberSubmitBtn" onclick="checkNumber()" style="display:none;">提交答案</button>
+            <div id="numberMessage"></div>
+            <button class="back-btn" onclick="backToMenu()">返回選單</button>
+        </div>
+
+        <!-- 顏色配對遊戲 -->
+        <div class="game-area" id="colorGame">
+            <div class="instructions">選擇與上方相同的顏色！訓練您的色彩感知力～</div>
+            <div class="score-board">
+                分數：<span id="colorScore">0</span>
+                <span class="streak-indicator" id="colorStreak" style="display:none;"></span>
+            </div>
+            <div class="number-display" id="targetColor" style="font-size: 26px;">點擊開始</div>
+            <div class="color-options" id="colorOptions"></div>
+            <button class="action-btn" id="colorStartBtn" onclick="startColorGame()">開始遊戲</button>
+            <div id="colorMessage"></div>
+            <button class="back-btn" onclick="backToMenu()">返回選單</button>
+        </div>
+
+        <!-- 快速計算遊戲 -->
+        <div class="game-area" id="mathGame">
+            <div class="instructions">快速計算並輸入答案！不用太快，算對就好～</div>
+            <div class="score-board">
+                分數：<span id="mathScore">0</span> | 時間：<span id="mathTimer">30</span>秒
+                <span class="streak-indicator" id="mathStreak" style="display:none;"></span>
+            </div>
+            <div class="number-display" id="mathQuestion">準備好了嗎？</div>
+            <input type="number" class="number-input" id="mathInput" placeholder="輸入答案..." style="display:none;">
+            <button class="action-btn" id="mathStartBtn" onclick="startMathGame()">開始遊戲</button>
+            <button class="action-btn secondary" id="mathSubmitBtn" onclick="checkMath()" style="display:none;">提交</button>
+            <div id="mathMessage"></div>
+            <button class="back-btn" onclick="backToMenu()">返回選單</button>
+        </div>
+    </div>
+
+    <script>
+        // 全局變量
+        let currentGame = null;
+        let totalScore = 0;
+        let currentStreak = 0;
+        let gamesPlayed = 0;
+
+        // 鼓勵語句庫
+        const encouragements = {
+            success: [
+                '太棒了！您真厲害！',
+                '做得好！繼續加油！',
+                '完美！您的大腦很靈活！',
+                '真聰明！再接再厲！',
+                '很棒！您越來越厲害了！',
+                '答對了！真是太好了！',
+                '優秀！您的記憶力真好！',
+                '讚！您做得很好！'
+            ],
+            milestone: [
+                '🎉 恭喜！連續答對 {n} 題了！',
+                '🌟 太厲害了！您已經得到 {n} 分！',
+                '🏆 了不起！完成了 {n} 個遊戲！',
+                '💪 堅持得很好！繼續保持！'
+            ],
+            encouragement: [
+                '別擔心，慢慢來！',
+                '沒關係，再試一次！',
+                '很好的嘗試！繼續努力！',
+                '不要灰心，您一定可以的！'
+            ]
+        };
+
+        // 記憶卡片遊戲變量
+        let memoryCards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        const emojis = ['🌸', '🌺', '🌻', '🌷', '🌼', '🌹', '🏵️', '🌲'];
+
+        // 數字記憶遊戲變量
+        let numberSequence = '';
+        let numberLevel = 1;
+        let numberScore = 0;
+        let numberStreak = 0;
+
+        // 顏色配對遊戲變量
+        let colorScore = 0;
+        let colorStreak = 0;
+        let targetColorValue = '';
+        const colors = [
+            { name: '天空藍', value: '#87CEEB' },
+            { name: '草綠色', value: '#90EE90' },
+            { name: '淺黃色', value: '#F0E68C' },
+            { name: '薰衣草', value: '#E6E6FA' },
+            { name: '粉紅色', value: '#FFB6C1' },
+            { name: '珊瑚色', value: '#FF7F50' }
+        ];
+
+        // 快速計算遊戲變量
+        let mathScore = 0;
+        let mathStreak = 0;
+        let mathTimer = 30;
+        let mathInterval = null;
+        let currentAnswer = 0;
+
+        function showAchievement(message) {
+            const banner = document.getElementById('achievementBanner');
+            banner.textContent = message;
+            banner.classList.add('show');
+            setTimeout(() => {
+                banner.classList.remove('show');
+            }, 3000);
+        }
+
+        function updateStats() {
+            document.getElementById('statsBar').style.display = 'flex';
+            document.getElementById('totalScore').textContent = totalScore;
+            document.getElementById('streakCount').textContent = currentStreak;
+            document.getElementById('gamesPlayed').textContent = gamesPlayed;
+
+            // 檢查里程碑
+            if (currentStreak > 0 && currentStreak % 5 === 0) {
+                showAchievement(encouragements.milestone[0].replace('{n}', currentStreak));
+            }
+            if (totalScore > 0 && totalScore % 100 === 0) {
+                showAchievement(encouragements.milestone[1].replace('{n}', totalScore));
+            }
+        }
+
+        function getRandomEncouragement(type) {
+            const messages = encouragements[type];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+
+        function startGame(game) {
+            document.getElementById('gameSelector').style.display = 'none';
+            document.querySelectorAll('.game-area').forEach(area => {
+                area.classList.remove('active');
+            });
+
+            currentGame = game;
+
+            if (game === 'memory') {
+                document.getElementById('memoryGame').classList.add('active');
+                initMemoryGame();
+            } else if (game === 'number') {
+                document.getElementById('numberGame').classList.add('active');
+                resetNumberGame();
+            } else if (game === 'color') {
+                document.getElementById('colorGame').classList.add('active');
+                resetColorGame();
+            } else if (game === 'math') {
+                document.getElementById('mathGame').classList.add('active');
+                resetMathGame();
+            }
+        }
+
+        function backToMenu() {
+            document.querySelectorAll('.game-area').forEach(area => {
+                area.classList.remove('active');
+            });
+            document.getElementById('gameSelector').style.display = 'grid';
+            currentGame = null;
+
+            if (mathInterval) {
+                clearInterval(mathInterval);
+                mathInterval = null;
+            }
+        }
+
+        // ===== 記憶卡片遊戲 =====
+        function initMemoryGame() {
+            matchedPairs = 0;
+            flippedCards = [];
+            document.getElementById('memoryScore').textContent = '0';
+            document.getElementById('memoryMessage').innerHTML = '';
+            document.getElementById('memoryStreak').style.display = 'none';
+
+            memoryCards = [...emojis, ...emojis]
+                .sort(() => Math.random() - 0.5)
+                .map((emoji, index) => ({
+                    id: index,
+                    emoji: emoji,
+                    flipped: false,
+                    matched: false
+                }));
+
+            renderMemoryCards();
+        }
+
+        function renderMemoryCards() {
+            const grid = document.getElementById('memoryGrid');
+            grid.innerHTML = '';
+
+            memoryCards.forEach(card => {
+                const button = document.createElement('button');
+                button.className = 'memory-card';
+                button.onclick = () => flipCard(card.id);
+
+                if (card.flipped || card.matched) {
+                    button.textContent = card.emoji;
+                    button.classList.add(card.matched ? 'matched' : 'flipped');
+                }
+
+                if (card.matched) {
+                    button.onclick = null;
+                }
+
+                grid.appendChild(button);
+            });
+        }
+
+        function flipCard(id) {
+            if (flippedCards.length === 2) return;
+
+            const card = memoryCards[id];
+            if (card.flipped || card.matched) return;
+
+            card.flipped = true;
+            flippedCards.push(card);
+            renderMemoryCards();
+
+            if (flippedCards.length === 2) {
+                setTimeout(checkMatch, 1000);
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            const messageDiv = document.getElementById('memoryMessage');
+
+            if (card1.emoji === card2.emoji) {
+                card1.matched = true;
+                card2.matched = true;
+                matchedPairs++;
+                currentStreak++;
+                totalScore += 10;
+
+                document.getElementById('memoryScore').textContent = matchedPairs;
+
+                const streakEl = document.getElementById('memoryStreak');
+                streakEl.textContent = `連對 ${currentStreak} 次！`;
+                streakEl.style.display = 'inline-block';
+
+                messageDiv.innerHTML = `<div class="message success">${getRandomEncouragement('success')}</div>`;
+
+                updateStats();
+
+                if (matchedPairs === 8) {
+                    gamesPlayed++;
+                    updateStats();
+                    setTimeout(() => {
+                        messageDiv.innerHTML = '<div class="encouragement-box">🎉 全部配對成功！您的記憶力真棒！</div>';
+                        setTimeout(() => {
+                            initMemoryGame();
+                        }, 2000);
+                    }, 500);
+                } else {
+                    setTimeout(() => {
+                        messageDiv.innerHTML = '';
+                    }, 2000);
+                }
+            } else {
+                card1.flipped = false;
+                card2.flipped = false;
+                currentStreak = 0;
+                document.getElementById('memoryStreak').style.display = 'none';
+                messageDiv.innerHTML = `<div class="message error">${getRandomEncouragement('encouragement')}</div>`;
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                }, 2000);
+            }
+
+            flippedCards = [];
+            renderMemoryCards();
+        }
+
+        // ===== 數字記憶遊戲 =====
+        function resetNumberGame() {
+            numberLevel = 1;
+            numberScore = 0;
+            numberStreak = 0;
+            document.getElementById('numberLevel').textContent = numberLevel;
+            document.getElementById('numberScore').textContent = numberScore;
+            document.getElementById('numberDisplay').textContent = '準備好了嗎？';
+            document.getElementById('numberInput').style.display = 'none';
+            document.getElementById('numberStartBtn').style.display = 'block';
+            document.getElementById('numberSubmitBtn').style.display = 'none';
+            document.getElementById('numberMessage').innerHTML = '';
+            document.getElementById('numberStreak').style.display = 'none';
+        }
+
+        function startNumberGame() {
+            document.getElementById('numberStartBtn').style.display = 'none';
+            document.getElementById('numberMessage').innerHTML = '';
+
+            numberSequence = '';
+            for (let i = 0; i < numberLevel + 2; i++) {
+                numberSequence += Math.floor(Math.random() * 10);
+            }
+
+            document.getElementById('numberDisplay').textContent = numberSequence;
+
+            setTimeout(() => {
+                document.getElementById('numberDisplay').textContent = '請輸入數字...';
+                document.getElementById('numberInput').style.display = 'block';
+                document.getElementById('numberInput').value = '';
+                document.getElementById('numberInput').focus();
+                document.getElementById('numberSubmitBtn').style.display = 'block';
+            }, 2000 + numberLevel * 500);
+        }
+
+        function checkNumber() {
+            const userInput = document.getElementById('numberInput').value;
+            const messageDiv = document.getElementById('numberMessage');
+
+            if (userInput === numberSequence) {
+                numberScore += numberLevel * 10;
+                numberStreak++;
+                currentStreak++;
+                totalScore += numberLevel * 10;
+                numberLevel++;
+
+                document.getElementById('numberLevel').textContent = numberLevel;
+                document.getElementById('numberScore').textContent = numberScore;
+
+                const streakEl = document.getElementById('numberStreak');
+                streakEl.textContent = `連對 ${numberStreak} 關！`;
+                streakEl.style.display = 'inline-block';
+
+                messageDiv.innerHTML = `<div class="message success">${getRandomEncouragement('success')}</div>`;
+
+                updateStats();
+
+                setTimeout(() => {
+                    document.getElementById('numberInput').style.display = 'none';
+                    document.getElementById('numberSubmitBtn').style.display = 'none';
+                    document.getElementById('numberStartBtn').style.display = 'block';
+                    document.getElementById('numberDisplay').textContent = '準備好進入下一關了嗎？';
+                    messageDiv.innerHTML = '';
+                }, 1500);
+            } else {
+                currentStreak = 0;
+                numberStreak = 0;
+                messageDiv.innerHTML = `<div class="message error">${getRandomEncouragement('encouragement')}<br>正確答案是：${numberSequence}</div>`;
+                document.getElementById('numberStreak').style.display = 'none';
+
+                setTimeout(() => {
+                    resetNumberGame();
+                }, 3000);
+            }
+        }
+
+        // ===== 顏色配對遊戲 =====
+        function resetColorGame() {
+            colorScore = 0;
+            colorStreak = 0;
+            document.getElementById('colorScore').textContent = colorScore;
+            document.getElementById('targetColor').textContent = '點擊開始';
+            document.getElementById('targetColor').style.background = 'linear-gradient(135deg, #f0f9f4 0%, #e8f5e9 100%)';
+            document.getElementById('colorOptions').innerHTML = '';
+            document.getElementById('colorStartBtn').style.display = 'block';
+            document.getElementById('colorMessage').innerHTML = '';
+            document.getElementById('colorStreak').style.display = 'none';
+        }
+
+        function startColorGame() {
+            document.getElementById('colorStartBtn').style.display = 'none';
+            document.getElementById('colorMessage').innerHTML = '';
+            generateColorChallenge();
+        }
+
+        function generateColorChallenge() {
+            const targetColor = colors[Math.floor(Math.random() * colors.length)];
+            targetColorValue = targetColor.value;
+
+            document.getElementById('targetColor').textContent = targetColor.name;
+            document.getElementById('targetColor').style.background = targetColor.value;
+
+            const options = [targetColor];
+            const otherColors = colors.filter(c => c.value !== targetColor.value);
+
+            while (options.length < 3) {
+                const randomColor = otherColors[Math.floor(Math.random() * otherColors.length)];
+                if (!options.find(c => c.value === randomColor.value)) {
+                    options.push(randomColor);
+                }
+            }
+
+            options.sort(() => Math.random() - 0.5);
+
+            const optionsDiv = document.getElementById('colorOptions');
+            optionsDiv.innerHTML = '';
+
+            options.forEach(color => {
+                const button = document.createElement('button');
+                button.className = 'color-btn';
+                button.style.background = color.value;
+                button.textContent = color.name;
+                button.onclick = () => checkColor(color.value);
+                optionsDiv.appendChild(button);
+            });
+        }
+
+        function checkColor(selectedColor) {
+            const messageDiv = document.getElementById('colorMessage');
+
+            if (selectedColor === targetColorValue) {
+                colorScore += 10;
+                colorStreak++;
+                currentStreak++;
+                totalScore += 10;
+
+                document.getElementById('colorScore').textContent = colorScore;
+
+                const streakEl = document.getElementById('colorStreak');
+                streakEl.textContent = `連對 ${colorStreak} 次！`;
+                streakEl.style.display = 'inline-block';
+
+                messageDiv.innerHTML = `<div class="message success">${getRandomEncouragement('success')}</div>`;
+
+                updateStats();
+
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                    generateColorChallenge();
+                }, 1000);
+            } else {
+                currentStreak = 0;
+                colorStreak = 0;
+                document.getElementById('colorStreak').style.display = 'none';
+                messageDiv.innerHTML = `<div class="message error">${getRandomEncouragement('encouragement')}</div>`;
+
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                    resetColorGame();
+                }, 2000);
+            }
+        }
+
+        // ===== 快速計算遊戲 =====
+        function resetMathGame() {
+            mathScore = 0;
+            mathStreak = 0;
+            mathTimer = 30;
+            document.getElementById('mathScore').textContent = mathScore;
+            document.getElementById('mathTimer').textContent = mathTimer;
+            document.getElementById('mathQuestion').textContent = '準備好了嗎？';
+            document.getElementById('mathInput').style.display = 'none';
+            document.getElementById('mathStartBtn').style.display = 'block';
+            document.getElementById('mathSubmitBtn').style.display = 'none';
+            document.getElementById('mathMessage').innerHTML = '';
+            document.getElementById('mathStreak').style.display = 'none';
+
+            if (mathInterval) {
+                clearInterval(mathInterval);
+                mathInterval = null;
+            }
+        }
+
+        function startMathGame() {
+            document.getElementById('mathStartBtn').style.display = 'none';
+            document.getElementById('mathInput').style.display = 'block';
+            document.getElementById('mathSubmitBtn').style.display = 'block';
+            document.getElementById('mathMessage').innerHTML = '';
+
+            mathTimer = 30;
+            mathScore = 0;
+            mathStreak = 0;
+            document.getElementById('mathScore').textContent = mathScore;
+            document.getElementById('mathStreak').style.display = 'none';
+
+            generateMathQuestion();
+
+            mathInterval = setInterval(() => {
+                mathTimer--;
+                document.getElementById('mathTimer').textContent = mathTimer;
+
+                if (mathTimer <= 0) {
+                    clearInterval(mathInterval);
+                    gamesPlayed++;
+                    updateStats();
+                    const finalMessage = mathScore > 50 ? '太厲害了！' : '很好的嘗試！';
+                    document.getElementById('mathMessage').innerHTML =
+                        `<div class="encouragement-box">⏰ 時間到！您的得分是：${mathScore} 分<br>${finalMessage}</div>`;
+                    setTimeout(() => {
+                        resetMathGame();
+                    }, 3000);
+                }
+            }, 1000);
+        }
+
+        function generateMathQuestion() {
+            const num1 = Math.floor(Math.random() * 20) + 1;
+            const num2 = Math.floor(Math.random() * 20) + 1;
+            const operations = ['+', '-', '×'];
+            const operation = operations[Math.floor(Math.random() * operations.length)];
+
+            let question = '';
+            if (operation === '+') {
+                currentAnswer = num1 + num2;
+                question = `${num1} + ${num2} = ?`;
+            } else if (operation === '-') {
+                currentAnswer = num1 - num2;
+                question = `${num1} - ${num2} = ?`;
+            } else {
+                currentAnswer = num1 * num2;
+                question = `${num1} × ${num2} = ?`;
+            }
+
+            document.getElementById('mathQuestion').textContent = question;
+            document.getElementById('mathInput').value = '';
+            document.getElementById('mathInput').focus();
+        }
+
+        function checkMath() {
+            const userAnswer = parseInt(document.getElementById('mathInput').value);
+            const messageDiv = document.getElementById('mathMessage');
+
+            if (userAnswer === currentAnswer) {
+                mathScore += 10;
+                mathStreak++;
+                currentStreak++;
+                totalScore += 10;
+
+                document.getElementById('mathScore').textContent = mathScore;
+
+                const streakEl = document.getElementById('mathStreak');
+                streakEl.textContent = `連對 ${mathStreak} 題！`;
+                streakEl.style.display = 'inline-block';
+
+                messageDiv.innerHTML = `<div class="message success">${getRandomEncouragement('success')}</div>`;
+
+                updateStats();
+
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                    generateMathQuestion();
+                }, 500);
+            } else {
+                currentStreak = 0;
+                mathStreak = 0;
+                document.getElementById('mathStreak').style.display = 'none';
+                messageDiv.innerHTML = `<div class="message error">${getRandomEncouragement('encouragement')}</div>`;
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                    generateMathQuestion();
+                }, 1000);
+            }
+        }
+
+        // Enter 鍵提交
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('numberInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') checkNumber();
+            });
+
+            document.getElementById('mathInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') checkMath();
+            });
+        });
+    </script>
+</body>
+</html>
