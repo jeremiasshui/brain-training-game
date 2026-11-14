@@ -26,11 +26,12 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
   }
   const effMain = (chart, c) => c.main.length ? { stars: mainNames(c), borrowed: false } : { stars: mainNames(chart.cells[mod(c.i + 6, 12)]), borrowed: true };
 
-  function overview(chart, who) {
+  function overview(chart, who, info) {
     const mc = chart.cells[chart.ming], em = effMain(chart, mc), sf = sanfang(chart, chart.ming);
     const out = [];
     out.push(P(`${who}生於農曆${chart.yearGZ}年${chart.lunar.leap ? '閏' : ''}${chart.lunar.month}月${chart.lunar.day}日，生肖屬${chart.zodiac}，${chart.yang ? '陽' : '陰'}${chart.gender}。命宮立於${mc.stem}${mc.branch}宮，身宮在${BR[chart.shen]}宮（${chart.cells[chart.shen].palace}），五行局為${chart.element}${NUM[chart.ju]}局。命主${chart.mingZhu}，身主${chart.shenZhu}。大限${chart.dir > 0 ? '順行' : '逆行'}，${chart.ju}歲（虛歲）起運。`));
-    out.push(P(`紫微斗數把人生分成十二個宮位，每個宮位掌管一個生活領域；十四顆主星決定各領域的基本性質，輔星與煞星加以修飾，四化則指出一生中資源、權力、名聲與課題的流向。以下的解讀依「本宮星曜 → 亮度 → 輔星煞星 → 生年四化 → 三方四正 → 宮干飛化」的順序逐宮展開，再綜論事業、財富、感情與健康，最後推演十年大限與近五年流年。`));
+    out.push(P(`紫微斗數把人生分成十二個宮位，每個宮位掌管一個生活領域；十四顆主星決定各領域的基本性質，輔星與煞星加以修飾，四化則指出一生中資源、權力、名聲與課題的流向。以下的解讀依「本宮星曜 → 亮度 → 輔星煞星 → 生年四化 → 三方四正 → 宮干飛化」的順序逐宮展開，再綜論事業、財富、感情與健康，最後推演十年大限、近五年流年、逐月流月與逐日流日。`));
+    if (info) out.push(P(info));
     out.push(`<h4>命宮格局</h4>`);
     if (em.borrowed) out.push(P(`你的命宮沒有主星，稱為「命無正曜」。這並不是缺陷，而是代表你的性格可塑性高、適應力強，容易受到環境與身邊的人影響，早年方向感較不明確，需要較長的時間找到自己的定位。論命時借對面遷移宮的主星 ${join(em.stars)} 入命宮來看，力量約打七折，也因此你在外的表現、所處的環境，對你一生的影響比一般人更大。`));
     else out.push(P(`你的命宮主星是 ${join(em.stars)}${em.stars.length > 1 ? '，雙星同宮，兩顆星的性質會彼此調和與拉扯，你的個性也因此比單星坐命的人更有層次' : '，單星獨坐，星曜的性質表現得純粹而明顯'}。`));
@@ -42,6 +43,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     if (has('紫微', '天府', '武曲', '廉貞', '天相') || (has('紫微', '武曲', '廉貞') && (all.has('天府') || all.has('天相')))) out.push(P(`你的命宮三方會見紫微、武曲、廉貞等星，屬於「紫府廉武相」一系的組合，重視秩序、地位與實際成果，適合在組織中擔任管理與承擔責任的角色，穩紮穩打地建立自己的版圖。`));
     if (has('太陽', '巨門') || has('太陽', '天梁') || has('太陽', '太陰')) out.push(P(`你的命宮三方見太陽與${all.has('巨門') ? '巨門' : all.has('天梁') ? '天梁' : '太陰'}相會，屬於重視名聲、表達與公眾事務的組合，人生的成就感多半來自專業受到肯定，而非單純的財富數字。`));
     if (chart.pos.天馬 !== undefined && sf.ids.includes(chart.pos.天馬) && (sf.ids.includes(chart.pos.祿存) || sf.ids.includes(chart.pos[chart.hua.祿]))) out.push(P(`你的命宮三方四正同時見到天馬與祿星，構成「祿馬交馳」，主動中得財，越走動越有機會，適合往外地發展、從事需要奔波或跨地域的事業。`));
+    out.push(ZW.extraPatterns(chart));
     out.push(P(`命宮三方四正（命宮、遷移、財帛、官祿）共會見吉星 ${sf.ji.length} 顆${sf.ji.length ? '（' + join(sf.ji) + '）' : ''}、煞星 ${sf.sha.length} 顆${sf.sha.length ? '（' + join(sf.sha) + '）' : ''}${sf.hua.length ? '，並見' + join(sf.hua) : ''}。${sf.score >= 3 ? '整體助力明顯多於阻力，屬於條件不錯的命盤，只要方向正確，付出容易得到回報。' : sf.score >= 0 ? '吉凶互見，助力與考驗大致相當，這是最常見也最真實的命盤結構：成就取決於你如何運用手上的資源。' : '煞忌的力量較重，人生的磨練比較直接，但古人說「煞星有制反為權」，這類命盤往往在專業技術、競爭性強的領域磨出過人的能力。'}`));
     out.push(`<h4>五行局</h4>` + P(ZW.JU[chart.ju]));
     out.push(`<h4>命主與身主</h4>` + P(`${ZW.ZHU[chart.mingZhu] || ''}${ZW.ZHU[chart.shenZhu] || ''}命主看的是先天的驅動力，身主看的是後天行事的習慣，兩者合看，可以理解你「為什麼而動」與「用什麼方式動」。`));
@@ -73,7 +75,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
       const b = em.borrowed ? chart.cells[mod(c.i + 6, 12)].main.find(x => x.name === s).bright : c.main.find(x => x.name === s).bright;
       out.push(`<h4>${s}${em.borrowed ? '（借對宮）' : ''}｜${b}</h4>` + P(ZW.MAIN[s][p]) + P(`${s}${ZW.BRIGHT_TXT[tier(b)]}`));
     });
-    if (c.main.length === 2) out.push(P(`${c.main[0].name}與${c.main[1].name}同宮，兩星的性質需要合參：上面兩段描述的特質會同時存在於你的${ZW.PAL_THEME[p]}之中，順境時取兩者之長，逆境時則容易在兩種傾向之間擺盪。`));
+    out.push(ZW.pairText(chart, c));
     if (c.minor.length) {
       out.push(`<h4>輔星與雜曜</h4>`);
       c.minor.forEach(s => out.push(P(ZW.MINOR[s.name].c)));
@@ -142,6 +144,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
       out.push(P(`大限宮干為「${c.stem}」，引動的大限四化如下：`) + spanHua(chart, c.stem, '這十年'));
       const cai = chart.cells[mod(d.b - 4, 12)], guan = chart.cells[mod(d.b + 4, 12)], sf = sanfang(chart, d.b);
       out.push(P(`這一限的大限財帛宮落在本命${palName(cai.p)}（${join(starList(cai)) || '空宮'}），大限官祿宮落在本命${palName(guan.p)}（${join(starList(guan)) || '空宮'}）。大限三方四正合計見吉星 ${sf.ji.length} 顆、煞星 ${sf.sha.length} 顆。${sf.score >= 3 ? '這是助力充足的十年，適合積極進取、擴大版圖。' : sf.score >= 0 ? '這是平穩中帶有考驗的十年，按部就班、量力而為即可有所成。' : '這是磨練較多的十年，宜守不宜攻，把重心放在累積實力與照顧身心。'}`));
+      out.push(ZW.decadeOverlay(chart, d));
     });
     return out.join('');
   }
@@ -166,22 +169,26 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
 
   function closing() {
     return P(`命盤呈現的是傾向，而不是定數。同樣的星曜組合，放在不同的家庭背景、教育與選擇之下，會走出很不一樣的人生。讀這份命書最好的方式，是把它當成一面鏡子：對照自己的經驗，哪些描述確實如此、哪些已經透過努力改變了，然後在化忌所在的領域多一分耐心，在化祿所在的領域多一分珍惜。`) +
-      P(`本命書採用常見的三合派安星法：以農曆生日與時辰安命身宮、以納音定五行局、依局數與生日安紫微，再布十四主星、六吉六煞、祿存天馬與常用雜曜，四化採「庚干太陽武曲太陰天同」的版本。不同門派在閏月歸屬、晚子時換日、庚干與壬干四化，以及星曜廟旺的判定上略有差異，若與其他排盤軟體的結果不同，多半是這些設定不同所致。疾厄宮的內容僅是傳統上對體質傾向的描述，不能取代醫療診斷。`);
+      P(`本命書採用常見的三合派安星法：以農曆生日與時辰安命身宮、以納音定五行局、依局數與生日安紫微，再布十四主星、六吉六煞、祿存天馬與常用雜曜，四化採「庚干太陽武曲太陰天同」的版本；小限依生年地支三合起宮、男順女逆；流月以流年斗君起正月，流日自流月命宮起初一，流時自流日命宮起子時。出生時間可依出生地經度與均時差校正為真太陽時，晚子時換日與閏月歸屬可在「進階設定」切換。不同門派在這些設定、庚干與壬干四化，以及星曜廟旺的判定上略有差異，若與其他排盤軟體的結果不同，多半是這些設定不同所致。流月、流日、流時的「吉、平、慎」是依三方四正的吉煞與四化落點計算出的相對評估，只供安排行程參考。疾厄宮的內容僅是傳統上對體質傾向的描述，不能取代醫療診斷。`);
   }
 
-  function buildReport(chart, name, nowYear) {
-    const who = name || '你', age = nowYear - chart.lunar.year + 1;
+  function buildReport(chart, name, today, extra) {
+    extra = extra || {};
+    const who = name || '你', nowYear = ZW.toLunar(today.getUTCFullYear(), today.getUTCMonth() + 1, today.getUTCDate()).year, age = nowYear - chart.lunar.year + 1;
     const secs = [
-      { id: 'overview', title: '命盤總覽', html: overview(chart, who) },
+      { id: 'overview', title: '命盤總覽', html: overview(chart, who, extra.info) },
       { id: 'hua', title: '生年四化', html: huaSection(chart) }
     ];
     for (let p = 0; p < 12; p++) secs.push({ id: 'pal' + p, title: palName(p), html: palaceSection(chart, p), palace: true });
     secs.push({ id: 'themes', title: '事業・財富・感情・健康', html: themes(chart) });
     secs.push({ id: 'decade', title: '十年大限', html: decadeSection(chart, age) });
-    secs.push({ id: 'year', title: '近五年流年', html: yearSection(chart, nowYear) });
+    secs.push({ id: 'year', title: '流年與流月', html: ZW.yearSection(chart, nowYear) });
+    secs.push({ id: 'days', title: '逐日流日', html: ZW.daysSection(chart, today, 60) });
+    if (extra.partner) secs.push({ id: 'syn', title: '合盤｜' + extra.partner.name, html: ZW.synastry(chart, extra.partner.chart, extra.partner.name) });
     secs.push({ id: 'closing', title: '結語與說明', html: closing() });
     const count = secs.reduce((n, s) => n + (s.title + s.html.replace(/<[^>]+>/g, '')).replace(/\s/g, '').length, 0);
     return { secs, count, age };
   }
+  ZW.R = { P, palName, join, starList, effMain, minorNote, spanHua };
   ZW.buildReport = buildReport;
 })();
