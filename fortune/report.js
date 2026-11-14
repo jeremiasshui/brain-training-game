@@ -169,7 +169,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
 
   function closing() {
     return P(`命盤呈現的是傾向，而不是定數。同樣的星曜組合，放在不同的家庭背景、教育與選擇之下，會走出很不一樣的人生。讀這份命書最好的方式，是把它當成一面鏡子：對照自己的經驗，哪些描述確實如此、哪些已經透過努力改變了，然後在化忌所在的領域多一分耐心，在化祿所在的領域多一分珍惜。`) +
-      P(`本命書採用常見的三合派安星法：以農曆生日與時辰安命身宮、以納音定五行局、依局數與生日安紫微，再布十四主星、六吉六煞、祿存天馬與常用雜曜，四化採「庚干太陽武曲太陰天同」的版本；小限依生年地支三合起宮、男順女逆；流月以流年斗君起正月，流日自流月命宮起初一，流時自流日命宮起子時。出生時間可依出生地經度與均時差校正為真太陽時，晚子時換日與閏月歸屬可在「進階設定」切換。不同門派在這些設定、庚干與壬干四化，以及星曜廟旺的判定上略有差異，若與其他排盤軟體的結果不同，多半是這些設定不同所致。流月、流日、流時的「吉、平、慎」是依三方四正的吉煞與四化落點計算出的相對評估，只供安排行程參考。疾厄宮的內容僅是傳統上對體質傾向的描述，不能取代醫療診斷。`);
+      P(`本命書採用常見的三合派安星法：以農曆生日與時辰安命身宮、以納音定五行局、依局數與生日安紫微，再布十四主星、六吉六煞、祿存天馬與常用雜曜，四化採「庚干太陽武曲太陰天同」的版本；小限依生年地支三合起宮、男順女逆；流月以流年斗君起正月，流日自流月命宮起初一，流時自流日命宮起子時。出生時間可依出生地經度與均時差校正為真太陽時，晚子時換日與閏月歸屬可在「進階設定」切換。不同門派在這些設定、庚干與壬干四化，以及星曜廟旺的判定上略有差異，若與其他排盤軟體的結果不同，多半是這些設定不同所致。流月、流日、流時的「吉、平、慎」是依三方四正的吉煞與四化落點計算出的相對評估，只供安排行程參考。疾厄宮的內容僅是傳統上對體質傾向的描述，不能取代醫療診斷。八字部分以節氣定月柱、以真太陽時定日柱與時柱，日主強弱採五行加權（月令加重），喜忌採扶抑法，未另論調候與從格；大運依節氣距離換算起運歲數。十年運與流年的「吉、平、慎」同樣是依喜忌算出的相對評估。`);
   }
 
   function buildReport(chart, name, today, extra) {
@@ -185,6 +185,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     secs.push({ id: 'year', title: '流年與流月', html: ZW.yearSection(chart, nowYear) });
     secs.push({ id: 'days', title: '逐日流日', html: ZW.daysSection(chart, today, 60) });
     if (extra.partner) secs.push({ id: 'syn', title: '合盤｜' + extra.partner.name, html: ZW.synastry(chart, extra.partner.chart, extra.partner.name) });
+    if (extra.bazi) { const bz = ZW.baziReport(extra.bazi, chart, extra.ctx); secs.unshift(...bz.slice(0, 5)); secs.push(bz[5]); }
     secs.push({ id: 'closing', title: '結語與說明', html: closing() });
     const count = secs.reduce((n, s) => n + (s.title + s.html.replace(/<[^>]+>/g, '')).replace(/\s/g, '').length, 0);
     return { secs, count, age };

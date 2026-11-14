@@ -16,22 +16,25 @@
   const pid = p => [p.name, p.gender, p.birth, p.time].join('|');
   const label = p => `${p.name || '未命名'}（${p.birth}）`;
 
+  const rv = n => (document.querySelector(`[name=${n}]:checked`) || {}).value || '';
+  const setR = (n, v) => { const e = [...document.querySelectorAll(`[name=${n}]`)].find(x => x.value === v); if (e) e.checked = true; };
   function readForm() {
     const pl = $('place').value, P = pl === 'x' ? ['自訂地點', +$('lon').value, +$('tz').value] : ZW.PLACES[+pl];
     return { name: $('name').value.trim(), gender: document.querySelector('[name=gender]:checked').value, birth: $('birth').value, time: $('time').value,
-      place: pl, placeName: P[0], lon: P[1], tz: P[2], solar: $('solar').checked, lateZi: $('lateZi').value, leap: $('leap').value };
+      orient: rv('orient'), rel: rv('rel'), job: rv('job'), concern: $('concern').value.trim(), place: pl, placeName: P[0], lon: P[1], tz: P[2], solar: $('solar').checked, lateZi: $('lateZi').value, leap: $('leap').value };
   }
   function fillForm(p) {
     $('name').value = p.name || ''; $('birth').value = p.birth; $('time').value = p.time;
     (p.gender === '男' ? $('gm') : $('gf')).checked = true;
     $('place').value = p.place; $('custom').hidden = p.place !== 'x';
     if (p.place === 'x') { $('lon').value = p.lon; $('tz').value = p.tz; }
+    setR('orient', p.orient); setR('rel', p.rel); setR('job', p.job); $('concern').value = p.concern || '';
     $('solar').checked = p.solar; $('lateZi').value = p.lateZi; $('leap').value = p.leap;
   }
   function compute(p) {
     const [y, m, d] = p.birth.split('-').map(Number), [hh, mm] = p.time.split(':').map(Number);
     const rt = ZW.resolveTime({ y, m, d, hh, mm, lon: p.lon, tz: p.tz, solar: p.solar, lateZi: p.lateZi });
-    return { rt, chart: ZW.buildChart(rt.y, rt.m, rt.d, rt.h, p.gender, { leap: p.leap }), y, m, d, hh, mm };
+    return { rt, chart: ZW.buildChart(rt.y, rt.m, rt.d, rt.h, p.gender, { leap: p.leap }), bazi: ZW.buildBazi({ y, m, d, hh, mm, tz: p.tz }, rt, p.gender), y, m, d, hh, mm };
   }
   function drawSaved() {
     $('saved').innerHTML = profiles.map((p, i) => `<span><button type="button" data-load="${i}">${esc(label(p))}</button><button type="button" class="del" data-del="${i}" aria-label="刪除 ${esc(label(p))}">✕</button></span>`).join('');
@@ -71,8 +74,9 @@
 
   const loc = p => ({ name: p.placeName, lon: p.lon, tz: p.tz, solar: p.solar, lateZi: p.lateZi });
   function render(scroll) {
-    const p = current, { rt, chart: c, y, m, d, hh, mm } = compute(p), who = p.name ? esc(p.name) : '';
-    $('resTitle').innerHTML = (who ? who + ' 的' : '') + '紫微命盤';
+    const p = current, { rt, chart: c, bazi, y, m, d, hh, mm } = compute(p), who = p.name ? esc(p.name) : '';
+    $('resTitle').innerHTML = (who ? who + ' 的' : '') + '命盤';
+    $('bazi').innerHTML = ZW.baziTable(bazi);
     $('resSub').textContent = `國曆 ${y} 年 ${m} 月 ${d} 日 ${ZW.pad(hh)}:${ZW.pad(mm)}｜${p.placeName}｜${p.gender}`;
     const ju = c.element + NUM[c.ju] + '局';
     $('meta').innerHTML = [['農曆', `${c.yearGZ}年 ${c.lunar.leap ? '閏' : ''}${c.lunar.month}月${c.lunar.day}日 ${ZW.BR[c.hour]}時`], ['真太陽時', p.solar ? rt.solar.split(' ')[1] : '未校正'], ['生肖', c.zodiac], ['五行局', ju],
@@ -94,7 +98,7 @@
       (c.lunar.leap ? `出生於農曆閏${c.lunar.month}月，依設定以${c.month}月論命。` : '') +
       (Math.abs(((rt.solar.split(' ')[1].slice(0, 2) * 60 + +rt.solar.slice(-2) + 60) % 120) - 0) < 12 || ((rt.solar.split(' ')[1].slice(0, 2) * 60 + +rt.solar.slice(-2) + 60) % 120) > 108 ? '請注意：這個時間距離時辰交界不到十二分鐘，出生時間只要有些微誤差，時辰就可能不同，建議也排一次相鄰時辰的命盤比較看看哪一張更貼近自己。' : '');
     const now = new Date(), today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-    const pp = profiles.find(x => pid(x) === $('partner').value), extra = { info };
+    const pp = profiles.find(x => pid(x) === $('partner').value), extra = { info, bazi, ctx: { who: who || '你', orient: p.orient, rel: p.rel, job: p.job, concern: esc(p.concern || ''), concernRaw: p.concern || '', now: now.getFullYear() } };
     if (pp) extra.partner = { name: pp.name || '對方', chart: compute(pp).chart };
     const r = ZW.buildReport(c, who, today, extra);
     $('count').textContent = r.count.toLocaleString('en-US');
@@ -120,6 +124,24 @@
   $('qp').onchange = lookup;
   $('print').onclick = () => window.print();
 
+  const steps = [...document.querySelectorAll('.step')]; let si = 0;
+  function show(i) {
+    si = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => s.classList.toggle('on', k === si));
+    $('sayline').textContent = steps[si].dataset.say; $('err').textContent = '';
+    $('prev').style.visibility = si ? 'visible' : 'hidden';
+    $('next').hidden = si === steps.length - 1; $('go').hidden = si !== steps.length - 1;
+    $('prog').textContent = `第 ${si + 1} 題，共 ${steps.length} 題`;
+  }
+  function stepOk() {
+    const need = steps[si].querySelector('input[required]');
+    if (need && !need.value) { $('err').textContent = need.id === 'birth' ? '請選擇出生日期' : '請輸入出生時間'; return false; }
+    return true;
+  }
+  $('next').onclick = () => { if (stepOk()) { show(si + 1); const f = steps[si].querySelector('input:not([type=radio]),select,textarea'); if (f) f.focus(); } };
+  $('prev').onclick = () => show(si - 1);
+  $('form').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && si < steps.length - 1) { e.preventDefault(); $('next').click(); } });
+  show(0);
   drawSaved(); drawPartners();
   const last = profiles.find(p => pid(p) === store.get('ziyuan.last', ''));
   if (last) fillForm(last);
