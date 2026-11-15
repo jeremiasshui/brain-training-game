@@ -19,7 +19,7 @@
   const setR = (n, v) => { const e = [...document.querySelectorAll(`[name=${n}]`)].find(x => x.value === v); if (e) e.checked = true; };
   function readForm() {
     const pl = $('place').value, P = pl === 'x' ? ['自訂地點', +$('lon').value, +$('tz').value] : ZW.PLACES[+pl];
-    return { name: $('name').value.trim(), gender: document.querySelector('[name=gender]:checked').value, cal: rv('cal'), leapM: $('leapM').checked, birth: rv('cal') === 'lunar' ? ($('ly').value ? `${$('ly').value}-${ZW.pad($('lm').value)}-${ZW.pad($('ld').value)}` : '') : $('birth').value, time: $('time').value,
+    return { name: $('name').value.trim(), gender: document.querySelector('[name=gender]:checked').value, cal: rv('cal'), leapM: $('leapM').checked, guessed, birth: rv('cal') === 'lunar' ? ($('ly').value ? `${$('ly').value}-${ZW.pad($('lm').value)}-${ZW.pad($('ld').value)}` : '') : $('birth').value, time: $('time').value,
       orient: rv('orient'), rel: rv('rel'), job: rv('job'), concern: $('concern').value.trim(), place: pl, placeName: P[0], lon: P[1], tz: P[2], solar: $('solar').checked, lateZi: $('lateZi').value, leap: $('leap').value };
   }
   function fillForm(p) {
@@ -108,6 +108,7 @@
     const info = `出生時間為鐘錶時間 ${y}/${m}/${d} ${ZW.pad(hh)}:${ZW.pad(mm)}，出生地${esc(p.placeName)}（東經 ${p.lon}°，UTC${p.tz >= 0 ? '+' : ''}${p.tz}）。` +
       (p.solar ? `依經度與當日均時差校正 ${rt.off >= 0 ? '+' : ''}${rt.off} 分鐘，真太陽時為 ${rt.solar}，定為${ZW.BR[rt.h]}時。` : `未做真太陽時校正，直接以鐘錶時間定為${ZW.BR[rt.h]}時。`) +
       (rt.late ? (p.lateZi === 'same' ? '出生於晚子時，依設定算作當日的子時。' : '出生於晚子時，依設定算作隔日的子時，排盤日期順延一天。') : '') +
+      (p.guessed ? '出生時辰不詳，這個時辰是依性格描述選出來的，屬於推測；若讀起來不像自己，請換相鄰的時辰重排比較。' : '') +
       (c.lunar.leap ? `出生於農曆閏${c.lunar.month}月，依設定以${c.month}月論命。` : '') +
       (Math.abs(((rt.solar.split(' ')[1].slice(0, 2) * 60 + +rt.solar.slice(-2) + 60) % 120) - 0) < 12 || ((rt.solar.split(' ')[1].slice(0, 2) * 60 + +rt.solar.slice(-2) + 60) % 120) > 108 ? '請注意：這個時間距離時辰交界不到十二分鐘，出生時間只要有些微誤差，時辰就可能不同，建議也排一次相鄰時辰的命盤比較看看哪一張更貼近自己。' : '');
     const now = new Date(), today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
@@ -126,7 +127,7 @@
 
   }
 
-  let lastTheme = null, busy = false;
+  let lastTheme = null, busy = false, guessed = false;
   $('report').addEventListener('change', e => {
     if (!e.target.matches('.todo input') || !current) return;
     store.set('ziyuan.todo.' + pid(current), [...document.querySelectorAll('.todo input:checked')].map(x => +x.dataset.i));
@@ -170,6 +171,7 @@
     si = Math.max(0, Math.min(steps.length - 1, i));
     steps.forEach((s, k) => s.classList.toggle('on', k === si));
     $('sayline').textContent = steps[si].dataset.say; $('err').textContent = '';
+    $('ava').innerHTML = ZW.avatar(['smile', 'calm', 'calm', 'talk', 'think', 'calm', 'smile', 'smile', 'think'][si] || 'calm');
     $('prev').style.visibility = si ? 'visible' : 'hidden';
     $('next').hidden = si === steps.length - 1; $('go').hidden = si !== steps.length - 1;
     $('prog').textContent = `第 ${si + 1} 題，共 ${steps.length} 題`;
@@ -183,6 +185,24 @@
   $('next').onclick = () => { if (stepOk()) { show(si + 1); const f = steps[si].querySelector('input:not([type=radio]),select,textarea'); if (f) f.focus(); } };
   $('prev').onclick = () => show(si - 1);
   $('form').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && si < steps.length - 1) { e.preventDefault(); $('next').click(); } });
+  $('heroAva').innerHTML = ZW.avatar('smile', true);
+  $('noTime').onclick = () => {
+    const p = readForm(); let y, m, d;
+    try { [y, m, d] = p.birth.split('-').map(Number); if (p.cal === 'lunar') [y, m, d] = lunarToSolar(y, m, d, p.leapM); if (!y) throw 0; } catch (_) { return void ($('err').textContent = '請先回上一題填好出生日期'); }
+    $('err').textContent = '';
+    $('guess').hidden = false;
+    $('guess').innerHTML = '<p class="hint" style="margin:0 0 4px">紫微斗數沒有時辰就定不出命宮，所以沒辦法排「缺時辰的盤」。下面是你生日當天十二個時辰各自的命宮主星與性格，選最像你的那一個；之後可以回來換別的時辰比較。</p>' +
+      Array.from({ length: 12 }, (_, h) => {
+        const c = ZW.buildChart(y, m, d, h, p.gender, { leap: p.leap }), mc = c.cells[c.ming], st = mc.main.length ? mc.main.map(x => x.name) : c.cells[ZW.mod(c.ming + 6, 12)].main.map(x => x.name);
+        return `<button type="button" data-h="${h}"><b>${ZW.BR[h]}時</b><i>${mc.main.length ? '' : '借'}${st.join('、')}</i>${st.map(x => ZW.TH.FACE[x][0][0] + '，但' + ZW.TH.FACE[x][0][1]).join('；')}</button>`;
+      }).join('');
+  };
+  $('guess').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    $('time').value = ZW.pad(+b.dataset.h * 2) + ':00'; $('solar').checked = false; guessed = true;
+    $('guess').hidden = true; $('err').textContent = `已選${ZW.BR[+b.dataset.h]}時（以 ${$('time').value} 代入，並關閉真太陽時校正）。`;
+  };
+  $('time').addEventListener('input', () => { guessed = false; });
   show(0);
   drawSaved(); drawPartners();
   const last = profiles.find(p => pid(p) === store.get('ziyuan.last', ''));

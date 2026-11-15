@@ -46,7 +46,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
       S([['命宮', line(0)], ['身宮', pn(chart.cells[chart.shen].p)]], [], [borrowed(0), main(0), pair(0)]),
       S([['生年化祿', huaAt('祿')], ['生年化科', huaAt('科')], ['命宮三方吉星', j(sf0.ji) || '無']], [], [ZW.HUA_STAR.祿[H.祿] + ZW.HUA_PAL.祿[at(H.祿)], ZW.HUA_STAR.科[H.科] + ZW.HUA_PAL.科[at(H.科)], sf0.ji.length ? `命宮三方四正另有${j(sf0.ji)}會照，這些是你不必爭取就有的助力：有人願意幫你、有資源可用。` : '你的命宮三方沒有吉星會照，福氣不靠別人送，主要落在上面化祿與化科所在的兩個領域。']),
       S([['空宮', empties.length ? j(empties.map(pn)) : '無'], ['命宮三方煞星', j(sf0.sha) || '無']], [], [empties.length ? `你的${j(empties.map(pn))}沒有主星。空宮代表那個領域你出生時沒有帶著現成的做法，別人理所當然會的事，你要到比較晚才摸出自己的方法：${j(empties.map(p => '「' + th(p) + '」'))}。` : '你的十二宮都有主星，沒有空宮，各個生活領域都有先天的模式可循。', ...[0, 4, 8, 6].filter(p => types(p).includes('煞')).map(p => ZW.TYPE_PAL.煞[p]), sf0.sha.length ? '' : `命宮三方沒有煞星，你的缺不在外在的阻力，而在化忌所在的${pn(jiP)}。`]),
-      S([['生年化忌', huaAt('忌')], ['命宮宮干', chart.cells[chart.ming].stem]], [f03], [ZW.HUA_GEN.忌 + ZW.HUA_STAR.忌[H.忌], ZW.HUA_PAL.忌[jiP], f03.text, `${T.PUNCH[jiP][0]}，${T.PUNCH[jiP][1]}。這就是你的業：不是懲罰，是一個重複太多次、已經變成反射動作的習慣。`]),
+      S([['生年化忌', huaAt('忌')], ['命宮宮干', chart.cells[chart.ming].stem]], [f03], [ZW.HUA_GEN.忌 + ZW.HUA_STAR.忌[H.忌], ZW.HUA_PAL.忌[jiP], f03.text, `${T.PUNCH[jiP][0]}，${T.PUNCH[jiP][1]}。這就是你的習氣：不是懲罰，是一個重複太多次、已經變成反射動作的習慣。`]),
       S([['生年化權', huaAt('權')], ['身宮', pn(chart.cells[chart.shen].p)]], [fly(0, 0)], [ZW.HUA_STAR.權[H.權] + ZW.HUA_PAL.權[at(H.權)], ZW.SHEN_PAL[chart.cells[chart.shen].p], fly(0, 0).text + '這是你自己能主動給出去、也最容易有回報的方向。']),
       S([['福德宮', line(10)], ['命主・身主', chart.mingZhu + '・' + chart.shenZhu]], [], [borrowed(10), main(10), (ZW.ZHU[chart.mingZhu] || '') + (ZW.ZHU[chart.shenZhu] || '')])
     ];
@@ -100,16 +100,16 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
 
   /* ---------- 版面 ---------- */
   function renderSec(def, data, n, ai) {
-    const [t, sub, core, quote, o1, o2] = def, a = ai || {};
+    const [t, sub, core, quote, o1, o2, dao, src] = def, a = ai || {};
     const body = (a.body && a.body.length ? a.body.map(esc) : data.body), opts = a.options && a.options.length === 2 ? a.options.map(o => [esc(o.choice), esc(o.cost)]) : [o1, o2];
     return `<div class="ts"><h4><span class="tn">${CN[n]}</span>${t}${core ? '<span class="core">核心</span>' : ''}</h4><p class="tsub">${sub}</p>` +
       `<div class="basis">${data.basis.map(([k2, v]) => `<div><b>${k2}</b><span>${v}</span></div>`).join('')}</div>` +
       data.flies.map(f => `<div class="flyb"><i>飛化</i>${f.head}</div>`).join('') + body.map(p => `<p>${p}</p>`).join('') +
-      `<blockquote>「${a.quote ? esc(a.quote) : quote}」</blockquote>` + (a.mirror && a.mirror.length ? `<ul class="mirror">${a.mirror.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : '') +
+      `<blockquote>「${a.quote ? esc(a.quote) : quote}」</blockquote><p class="dao">道家怎麼看：「${dao}」${src}</p>` + (a.mirror && a.mirror.length ? `<ul class="mirror">${a.mirror.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : '') +
       `<div class="tops">${opts.map((o, i) => `<div><b>選項${'一二'[i]}</b>${o[0]}<i>代價：${o[1]}</i></div>`).join('')}</div></div>`;
   }
-  const CH = [['c1', '第一章｜我的命與業', '天生的命，在哪裡成了業，又將因選擇流向哪裡'], ['c2', '第二章｜我的財富福田', '錢從哪裡進來，又會留在哪裡'], ['c3', '第三章｜我的愛情因緣', '心動從哪裡開始，最後又會成為什麼關係'], ['c4', '第四章｜未來十年', '十年的門從哪裡打開，最後又落在哪裡']];
-  const appx = c => c.rel === '已經結婚了' ? ['ch', '附錄｜我將傳下去的生命', '我從父母那裡收到的，會如何流向下一代'] : ['pa', '附錄｜最初塑造我的因緣', '我收到的一切，該在哪裡停下，又該以什麼方式還回去'];
+  const CH = [['c1', '第一章｜我的稟賦與習氣', '天生帶來的，在哪裡養成了習氣，又能往哪裡修'], ['c2', '第二章｜我的財與庫', '錢從哪裡進來，又會留在哪裡'], ['c3', '第三章｜我的情與緣', '心動從哪裡開始，最後又會成為什麼關係'], ['c4', '第四章｜未來十年，順時而行', '十年的門從哪裡打開，最後又落在哪裡']];
+  const appx = c => c.rel === '已經結婚了' ? ['ch', '附錄｜我要傳下去的', '我從父母那裡收到的，會如何流向下一代'] : ['pa', '附錄｜最初養成我的地方', '我收到的一切，該在哪裡停下，又該以什麼方式還回去'];
 
   function intro(k, ai) {
     const { chart, c, eff, line, at } = k, a = ai || {}, jiP = at(chart.hua.忌);
@@ -118,11 +118,11 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     const M = ZW.MAIN, one = p => first(M[eff(p).stars[0]][p], 2);
     const now = a.now ? ['money', 'work', 'love', 'home', 'body'].map(x => esc(a.now[x])) : [one(4), (D(c.job) ? first(D(c.job), 2) : '') + first(M[eff(8).stars[0]][8]), (ZW.BZ.REL[c.rel] ? first(ZW.BZ.REL[c.rel]) : '') + first(M[eff(2).stars[0]][2]), one(9), one(5)];
     return `<div class="card2"><div class="cr"><b>農曆</b><span>${chart.yearGZ}年 ${chart.lunar.leap ? '閏' : ''}${chart.lunar.month}月 ${chart.lunar.day}日</span></div><div class="cr"><b>生時</b><span>${BR[chart.hour]}時・${chart.yang ? '陽' : '陰'}${chart.gender}</span></div><div class="cr"><b>命宮</b><span>${line(0)}</span></div><div class="cr"><b>生年忌</b><span>${chart.hua.忌}，在${pn(jiP)}</span></div></div>` +
-      (c.concern ? `<p class="say">你說：「${c.concern}」。先把這件事放著，我從你這個人看起。</p>` : '<p class="say">坐好。我先說你現在的樣子，再說為什麼。</p>') +
+      (c.concern ? `<p class="say">你說：「${c.concern}」。這件事我記下了。先從你這個人看起，答案多半在裡面。</p>` : '<p class="say">先別急。我先說你現在的樣子，再說為什麼，最後說往哪裡走。</p>') +
       `<div class="faces"><div class="fh"><span>別人看到的 <b>表</b></span><span><b class="li">裏</b> 實際上的</span></div>${faces.map(f => `<div class="fr"><span>${f[0]}</span><span>${f[1]}</span></div>`).join('')}</div>` +
       `<p class="punch">${punch[0]}<br><strong>${punch[1]}</strong></p>` +
       `<h4>這本命書會講到的</h4><div class="nowg">${['錢', '工作', '感情', '家裡', '身體'].map((n, i) => `<div><b>${n}</b><span>${now[i]}</span></div>`).join('')}</div>` +
-      `<p>你為這些事煩惱是有原因的，原因就在命盤上。紫微斗數是一張十二格的地圖，把你這輩子會碰到的十二件事各分一格，再看哪一顆星落進哪一格。它看的是結構：什麼東西放在哪裡、彼此怎麼拉扯，所以答得出「為什麼每次都這樣」。以下四章，每一節都從你盤上的某一格出發，先列出盤面依據，再說白話，最後給你兩個選項與各自的代價。</p>`;
+      `<p>迷茫不是壞事，它只是在告訴你：原來的走法該換了。你為這些事煩惱是有原因的，原因就在命盤上。紫微斗數是一張十二格的地圖，把你這輩子會碰到的十二件事各分一格，再看哪一顆星落進哪一格。它看的是結構：什麼東西放在哪裡、彼此怎麼拉扯，所以答得出「為什麼每次都這樣」。以下四章，每一節都從你盤上的某一格出發，先列出盤面依據，再說白話，最後給你兩個選項與各自的代價。</p>`;
   }
   function actions(k, pid) {
     const { chart, bazi, at, years, fly } = k, H = chart.hua, jiP = at(H.忌), best = years.slice().sort((a, b) => b.tot - a.tot)[0], worst = years.slice().sort((a, b) => a.tot - b.tot)[0];

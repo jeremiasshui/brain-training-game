@@ -24,7 +24,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
 
   function ch1(b, c) {
     const o = [], dt = b.P.day.tenB;
-    o.push(say('坐好。我只說實話，不說好聽的。先看你這個人。'));
+    o.push(say('我說話直，但都是為你好。先看你這個人。'));
     o.push(P(`${c.who}的八字是 ${b.P.year.gz}年 ${b.P.month.gz}月 ${b.P.day.gz}日 ${b.P.hour.gz}時。八字以日柱的天干為「我」，稱為日主；其餘七個字與日主的生剋關係，就是十神。你的日主是${STEMS[b.ds]}${EL[b.me]}，生在${BR[b.P.month.b]}月。`));
     o.push('<h4>日主｜你的本質</h4>' + P(D.DAY[b.ds]));
     o.push(`<h4>日柱｜${b.P.day.gz}</h4>` + P(`日柱是你自己與另一半的位置。你的日支是${BR[b.db]}，藏${b.P.day.hide.map(h => STEMS[h]).join('、')}，本氣對日主而言是${dt}。${D.TEN[dt].c}這股力量就坐在你的腳下，是你最貼身的習性，也是你在親密關係裡的樣子。`) + P(D.STAGE[b.P.day.stage]));
@@ -60,7 +60,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
 
   function ch2(b, c) {
     const o = [], share = b.w[b.rel(2)] / b.total, rich = share >= 0.2, cv = curve(b, c.now);
-    o.push(say('接著講錢。你嘴上說夠用就好，其實想要的比誰都多，對吧。'));
+    o.push(say('接著講錢。錢像水，看的是你這口井有多深、水從哪裡來。'));
     o.push('<h4>財星的狀態</h4>' + P(`對${STEMS[b.ds]}${EL[b.me]}日主來說，財星是${EL[b.rel(2)]}。你的命局裡${EL[b.rel(2)]}的力量約占 ${Math.round(share * 100)}%，明面上有 ${b.grp(2)} 個財星（${['正財', '偏財'].filter(t => b.tens[t]).map(t => t + ' ' + b.tens[t]).join('、') || '不現'}），日主屬於${b.level}。`) +
       P(b.strong && rich ? '身強而財旺：你有力氣，也有財可取，這是能擔大財的結構。你適合主動出擊、經營事業或投資，錢對你是工具而非負擔。只要運走到財與食傷的年份，進帳會很明顯。你的財富層級在同輩之中屬於前段，關鍵是別因為自信過頭而重押。' :
         b.strong ? '身強而財弱：你有的是力氣與本事，缺的是財路。你的錢不會自己來，要靠你的才華與技能去「生」出來，也就是食傷生財這條路。平常收入中等，但只要走到財運或食傷運的年份，收入會突然跳一階。你的財富是「運到才發」型，時機比努力重要。' :
@@ -91,7 +91,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
   function ch3(b, c) {
     const o = [], m = D.MATE[c.mateEl], ys = meet(b, c), months = [...new Set([MON(b.peach), MON(HE[b.db])])];
     const n = c.same ? 0 : b.grp(b.spouseTen);
-    o.push(say('再來是感情。你在這件事上吃過的虧，其實每次都是同一種。'));
+    o.push(say('再來是感情。你在這件事上繞的路，其實每次都是同一條，看懂了就能換一條走。'));
     if (D.REL[c.rel]) o.push(P(D.REL[c.rel]));
     o.push('<h4>配偶星與配偶宮</h4>' + P(c.same ? `傳統八字以「男看財星、女看官殺」定配偶星，這是以異性婚配為前提的規則。你選的是同性取向，所以這裡改以日支「配偶宮」為主來看：你的日支是${BR[b.db]}，五行屬${EL[c.mateEl]}，坐${b.P.day.stage}。配偶宮代表的是你身邊那個位置的氣質，不受對象性別影響。` :
       `${b.gender}命以${b.gender === '男' ? '財星' : '官殺'}為配偶星，對你而言是${EL[c.mateEl]}。你的命局明面上有 ${n} 個配偶星。${n === 0 ? '配偶星不現，代表你對感情比較被動、緣分來得晚，或不太把感情放在人生的第一順位；要等大運或流年把配偶星帶進來，緣分才會動。' : n === 1 ? '配偶星一位，清而不雜，感情的對象明確，適合專一經營。' : '配偶星有兩位以上，代表感情機會多、選擇多，也容易有重疊或反覆，定下來之前會經過幾段。'}你的配偶宮是日支${BR[b.db]}，坐${b.P.day.stage}。`) +
@@ -106,7 +106,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
 
   function ch4(b, c) {
     const o = [], age = c.now - b.by + 1, L = D.LUCK[b.primary];
-    o.push(say('最後講運。命是你拿到的牌，運是出牌的時機。牌再好，時機錯了也是白打。'));
+    o.push(say('最後講運。命是你這艘船，運是風向。順風時揚帆，逆風時修船，都不算白過。'));
     o.push('<h4>大運</h4>' + P(`大運每十年一換，從月柱順排或逆排而來。你是${b.ys % 2 ? '陰' : '陽'}年生的${b.gender}命，大運${b.dir > 0 ? '順' : '逆'}行，約 ${b.startAge} 歲起運。大運的天干管前五年、地支管後五年，地支的力量較重。`));
     b.decades.forEach(d => {
       const cur = age >= d.from && age <= d.to;
