@@ -14,17 +14,18 @@
 
   let profiles = store.get('ziyuan.profiles', []), current = null;
   const pid = p => [p.name, p.gender, p.birth, p.time].join('|');
-  const label = p => `${p.name || '未命名'}（${p.birth}）`;
 
   const rv = n => (document.querySelector(`[name=${n}]:checked`) || {}).value || '';
   const setR = (n, v) => { const e = [...document.querySelectorAll(`[name=${n}]`)].find(x => x.value === v); if (e) e.checked = true; };
   function readForm() {
     const pl = $('place').value, P = pl === 'x' ? ['自訂地點', +$('lon').value, +$('tz').value] : ZW.PLACES[+pl];
-    return { name: $('name').value.trim(), gender: document.querySelector('[name=gender]:checked').value, birth: $('birth').value, time: $('time').value,
+    return { name: $('name').value.trim(), gender: document.querySelector('[name=gender]:checked').value, cal: rv('cal'), leapM: $('leapM').checked, birth: rv('cal') === 'lunar' ? ($('ly').value ? `${$('ly').value}-${ZW.pad($('lm').value)}-${ZW.pad($('ld').value)}` : '') : $('birth').value, time: $('time').value,
       orient: rv('orient'), rel: rv('rel'), job: rv('job'), concern: $('concern').value.trim(), place: pl, placeName: P[0], lon: P[1], tz: P[2], solar: $('solar').checked, lateZi: $('lateZi').value, leap: $('leap').value };
   }
   function fillForm(p) {
-    $('name').value = p.name || ''; $('birth').value = p.birth; $('time').value = p.time;
+    $('name').value = p.name || ''; $('time').value = p.time;
+    setR('cal', p.cal || 'solar'); calSwitch(); $('leapM').checked = !!p.leapM;
+    if (p.cal === 'lunar') { const [a, b, c] = p.birth.split('-'); $('ly').value = a; $('lm').value = +b; $('ld').value = +c; } else $('birth').value = p.birth;
     (p.gender === '男' ? $('gm') : $('gf')).checked = true;
     $('place').value = p.place; $('custom').hidden = p.place !== 'x';
     if (p.place === 'x') { $('lon').value = p.lon; $('tz').value = p.tz; }
@@ -32,10 +33,22 @@
     $('solar').checked = p.solar; $('lateZi').value = p.lateZi; $('leap').value = p.leap;
   }
   function compute(p) {
-    const [y, m, d] = p.birth.split('-').map(Number), [hh, mm] = p.time.split(':').map(Number);
+    let [y, m, d] = p.birth.split('-').map(Number); const [hh, mm] = p.time.split(':').map(Number);
+    if (p.cal === 'lunar') { const s = lunarToSolar(y, m, d, p.leapM); if (!s) throw new Error('nolunar'); [y, m, d] = s; }
     const rt = ZW.resolveTime({ y, m, d, hh, mm, lon: p.lon, tz: p.tz, solar: p.solar, lateZi: p.lateZi });
     return { rt, chart: ZW.buildChart(rt.y, rt.m, rt.d, rt.h, p.gender, { leap: p.leap }), bazi: ZW.buildBazi({ y, m, d, hh, mm, tz: p.tz }, rt, p.gender), y, m, d, hh, mm };
   }
+  function lunarToSolar(y, m, d, leap) {
+    const mo = ZW.lunarMonths(y).find(x => x.month === m && x.leap === !!leap);
+    if (!mo) return null;
+    const dt = new Date(mo.start.getTime() + (d - 1) * 864e5);
+    return dt > mo.end ? null : [dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate()];
+  }
+  $('lm').innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1} 月</option>`).join('');
+  $('ld').innerHTML = Array.from({ length: 30 }, (_, i) => `<option value="${i + 1}">${i + 1} 日</option>`).join('');
+  function calSwitch() { const l = rv('cal') === 'lunar'; $('lunarBox').hidden = !l; $('solarBox').hidden = l; }
+  document.querySelectorAll('[name=cal]').forEach(e => e.onchange = calSwitch);
+  const label = p => `${p.name || '未命名'}（${p.cal === 'lunar' ? '農曆 ' : ''}${p.birth}）`;
   function drawSaved() {
     $('saved').innerHTML = profiles.map((p, i) => `<span><button type="button" data-load="${i}">${esc(label(p))}</button><button type="button" class="del" data-del="${i}" aria-label="刪除 ${esc(label(p))}">✕</button></span>`).join('');
   }
@@ -49,7 +62,7 @@
     $('partner').innerHTML = '<option value="">不合盤</option>' + profiles.filter(p => pid(p) !== cur).map(p => `<option value="${esc(pid(p))}">${esc(label(p))}</option>`).join('');
     if ([...$('partner').options].some(o => o.value === keep)) $('partner').value = keep;
   }
-  $('partner').onchange = () => current && render(false);
+  $('partner').onchange = () => { if (current) { render(false); const e = document.getElementById('syn'); if (e) e.scrollIntoView({ behavior: 'smooth', block: 'start' }); } };
 
   $('form').addEventListener('submit', e => {
     e.preventDefault();
@@ -61,7 +74,7 @@
     run(p);
   });
   function run(p) {
-    try { compute(p); } catch (_) { return void ($('err').textContent = '此瀏覽器無法換算農曆，請改用新版 Chrome 或 Safari'); }
+    try { compute(p); } catch (e) { return void ($('err').textContent = e.message === 'nolunar' ? '查無這個農曆日期，請確認月份大小與是否為閏月' : '此瀏覽器無法換算農曆，請改用新版 Chrome 或 Safari'); }
     $('err').textContent = '';
     current = p;
     const i = profiles.findIndex(x => pid(x) === pid(p));
@@ -77,7 +90,7 @@
     const p = current, { rt, chart: c, bazi, y, m, d, hh, mm } = compute(p), who = p.name ? esc(p.name) : '';
     $('resTitle').innerHTML = (who ? who + ' 的' : '') + '命盤';
     $('bazi').innerHTML = ZW.baziTable(bazi);
-    $('resSub').textContent = `國曆 ${y} 年 ${m} 月 ${d} 日 ${ZW.pad(hh)}:${ZW.pad(mm)}｜${p.placeName}｜${p.gender}`;
+    $('resSub').textContent = `${p.cal === 'lunar' ? '農曆 ' + p.birth + (p.leapM ? '（閏月）' : '') + ' ＝ ' : ''}國曆 ${y} 年 ${m} 月 ${d} 日 ${ZW.pad(hh)}:${ZW.pad(mm)}｜${p.placeName}｜${p.gender}`;
     const ju = c.element + NUM[c.ju] + '局';
     $('meta').innerHTML = [['農曆', `${c.yearGZ}年 ${c.lunar.leap ? '閏' : ''}${c.lunar.month}月${c.lunar.day}日 ${ZW.BR[c.hour]}時`], ['真太陽時', p.solar ? rt.solar.split(' ')[1] : '未校正'], ['生肖', c.zodiac], ['五行局', ju],
       ['命宮', ZW.BR[c.ming]], ['身宮', ZW.BR[c.shen]], ['命主', c.mingZhu], ['身主', c.shenZhu],
@@ -98,16 +111,44 @@
       (c.lunar.leap ? `出生於農曆閏${c.lunar.month}月，依設定以${c.month}月論命。` : '') +
       (Math.abs(((rt.solar.split(' ')[1].slice(0, 2) * 60 + +rt.solar.slice(-2) + 60) % 120) - 0) < 12 || ((rt.solar.split(' ')[1].slice(0, 2) * 60 + +rt.solar.slice(-2) + 60) % 120) > 108 ? '請注意：這個時間距離時辰交界不到十二分鐘，出生時間只要有些微誤差，時辰就可能不同，建議也排一次相鄰時辰的命盤比較看看哪一張更貼近自己。' : '');
     const now = new Date(), today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-    const pp = profiles.find(x => pid(x) === $('partner').value), extra = { info, bazi, ctx: { who: who || '你', orient: p.orient, rel: p.rel, job: p.job, concern: esc(p.concern || ''), concernRaw: p.concern || '', now: now.getFullYear() } };
+    const pp = profiles.find(x => pid(x) === $('partner').value), extra = { info, bazi, ai: store.get('ziyuan.ai.' + pid(p), null), pid: pid(p), ctx: { who: who || '你', orient: p.orient, rel: p.rel, job: p.job, concern: esc(p.concern || ''), concernRaw: p.concern || '', now: now.getFullYear() } };
     if (pp) extra.partner = { name: pp.name || '對方', chart: compute(pp).chart };
     const r = ZW.buildReport(c, who, today, extra);
     $('count').textContent = r.count.toLocaleString('en-US');
     $('toc').innerHTML = r.secs.map(s => `<a href="#${s.id}">${esc(s.title)}</a>`).join('');
     $('report').innerHTML = r.secs.map((s, n) => `<article id="${s.id}"><h3><span>${String(n + 1).padStart(2, '0')}</span>${esc(s.title)}</h3>${s.html}</article>`).join('');
+    lastTheme = { theme: r.theme, facts: ZW.factSheet(c, bazi, extra.ctx, r.theme.k) };
+    const done = store.get('ziyuan.todo.' + pid(p), []);
+    document.querySelectorAll('.todo input').forEach(x => { x.checked = done.includes(+x.dataset.i); });
+    $('aiclear').hidden = !extra.ai;
     $('result').style.display = 'block';
     if (scroll) $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else if (pp) $('syn').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   }
+
+  let lastTheme = null, busy = false;
+  $('report').addEventListener('change', e => {
+    if (!e.target.matches('.todo input') || !current) return;
+    store.set('ziyuan.todo.' + pid(current), [...document.querySelectorAll('.todo input:checked')].map(x => +x.dataset.i));
+  });
+  $('akey').value = store.get('ziyuan.key', '');
+  $('aigo').onclick = async () => {
+    const key = $('akey').value.trim();
+    if (!current || busy) return;
+    if (!key) return void ($('aistat').textContent = '請先填入 API 金鑰。');
+    store.set('ziyuan.key', key); busy = true; $('aigo').disabled = true;
+    const id = pid(current), acc = {};
+    $('aistat').textContent = '撰寫中：第 1 段（共 ' + (lastTheme.theme.list.length + 1) + ' 段），每段約需一到數分鐘，請不要關閉頁面。';
+    try {
+      await ZW.aiWrite(key, lastTheme.theme, lastTheme.facts, (k, data, n, total) => {
+        acc[k] = data; store.set('ziyuan.ai.' + id, acc);
+        if (current && pid(current) === id) render(false);
+        $('aistat').textContent = n < total ? `已完成 ${n}／${total} 段，繼續撰寫中⋯⋯` : `全部 ${total} 段撰寫完成（模型：${ZW.AI_MODEL}）。`;
+      });
+    } catch (e) { $('aistat').textContent = '撰寫中斷：' + e.message + (Object.keys(acc).length ? ' 已完成的段落已保留。' : ''); }
+    busy = false; $('aigo').disabled = false;
+  };
+  $('aiclear').onclick = () => { if (current && confirm('改回預寫版本？AI 撰寫的內容會被刪除。')) { try { localStorage.removeItem('ziyuan.ai.' + pid(current)); } catch (_) { } $('aistat').textContent = ''; render(false); } };
 
   function setNow() {
     const n = new Date();
@@ -134,8 +175,9 @@
     $('prog').textContent = `第 ${si + 1} 題，共 ${steps.length} 題`;
   }
   function stepOk() {
+    if (steps[si].contains($('birth')) && !readForm().birth) { $('err').textContent = '請填寫出生日期'; return false; }
     const need = steps[si].querySelector('input[required]');
-    if (need && !need.value) { $('err').textContent = need.id === 'birth' ? '請選擇出生日期' : '請輸入出生時間'; return false; }
+    if (need && !need.value) { $('err').textContent = '請輸入出生時間'; return false; }
     return true;
   }
   $('next').onclick = () => { if (stepOk()) { show(si + 1); const f = steps[si].querySelector('input:not([type=radio]),select,textarea'); if (f) f.focus(); } };

@@ -161,6 +161,40 @@ textarea:focus{border-color:var(--pink)}
 .xt{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:10px 0 14px}
 .xr{display:grid;grid-template-columns:1fr 1.5fr 1.5fr .9fr;gap:6px;padding:8px 10px;font-size:13px;border-top:1px solid #222;align-items:center;color:var(--body)}
 .xr:first-child{border-top:0}.xh{color:var(--muted);font-size:12px}
+.three{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px}
+.chsub{color:var(--gold)!important;text-align:center!important;font-size:14.5px!important;margin-bottom:6px!important}
+.ts{border:1px solid var(--line);border-radius:14px;padding:16px 16px 6px;margin:14px 0;background:var(--panel)}
+.report .ts h4{border:0;padding:0;margin:0 0 2px;font-size:19px;display:flex;align-items:center;gap:10px}
+.tn{color:var(--gold-deep);font-size:14px}
+.core{font-size:11px;font-weight:400;background:#8a1c24;color:#fff;border-radius:3px;padding:1px 7px;margin-left:auto}
+.report .tsub{color:var(--muted);font-size:13.5px;margin-bottom:12px}
+.basis{border:1px solid var(--gold-deep);border-radius:8px;padding:4px 12px;margin-bottom:10px}
+.basis div{display:grid;grid-template-columns:96px 1fr;gap:10px;font-size:13px;padding:5px 0;border-top:1px solid #222;color:var(--body)}
+.basis div:first-child{border-top:0}.basis b{color:var(--gold);font-weight:500}
+.flyb{background:#2a1215;border:1px solid #6a1c22;border-radius:8px;padding:8px 12px;font-size:14px;margin-bottom:10px;color:var(--text)}
+.flyb i{font-style:normal;font-size:11px;color:var(--gold);letter-spacing:.3em;display:block}
+.report blockquote{font-size:18px;font-weight:700;color:var(--text);text-align:center;line-height:1.6;margin:18px 6px;padding:10px 0;border-top:1px solid var(--gold-deep);border-bottom:1px solid var(--gold-deep)}
+.mirror{margin:0 0 12px 20px;font-size:14.5px;color:var(--body)}.mirror li{margin-bottom:4px}
+.tops{display:grid;gap:8px;margin:12px 0}
+.tops div{background:var(--card);border-radius:10px;padding:10px 12px;font-size:14.5px;color:var(--text)}
+.tops b{display:block;font-size:11.5px;color:var(--gold);font-weight:500;letter-spacing:.2em}
+.tops i{display:block;font-style:normal;font-size:13.5px;color:var(--muted);margin-top:2px}
+.card2{border:1px solid var(--gold-deep);border-radius:12px;padding:6px 14px;margin-bottom:14px}.card2 .cr{border-color:#2a2a2a}.card2 .cr:first-child{border-top:0}
+.faces{border:1px solid var(--gold-deep);border-radius:12px;overflow:hidden;margin:14px 0}
+.fh,.fr{display:grid;grid-template-columns:1fr 1fr}.fh{font-size:12px;color:var(--muted)}
+.fh span,.fr span{padding:10px 12px;border-top:1px solid #222}.fh span{border-top:0}
+.fh span:first-child,.fr span:first-child{text-align:right;color:var(--muted);border-right:1px solid var(--gold-deep)}
+.fr span:last-child,.fh span:last-child{background:#24100f;color:var(--text)}
+.fh b{border:1px solid var(--gold-deep);padding:0 5px;color:var(--gold);margin:0 4px}.fh b.li{background:#8a1c24;color:#fff;border-color:#8a1c24}
+.report .punch{text-align:center;font-size:17px;color:var(--muted);margin:22px 0}.punch strong{font-size:26px;color:#ff5c4d;font-weight:900}
+.nowg{display:grid;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.nowg div{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:12px;border-top:1px solid #222;font-size:14.5px;color:var(--body)}
+.nowg div:first-child{border-top:0}.nowg b{background:#5a1418;color:#f0d9a0;text-align:center;border-radius:4px;align-self:start;padding:2px 0;font-weight:500}
+.todo{display:grid;gap:8px;margin:10px 0 16px}
+.todo label{display:flex;gap:10px;align-items:flex-start;background:var(--card);border-radius:10px;padding:10px 12px;font-size:14.5px;color:var(--body);cursor:pointer}
+.todo input{width:18px;height:18px;margin-top:4px;flex:none;accent-color:var(--pink)}
+.todo input:checked+span{color:var(--dim);text-decoration:line-through}
+.report .stop{border-left:3px solid #ff5c4d;padding-left:12px;color:var(--text);font-weight:700;text-align:left}
 footer{padding:28px 0 60px;color:var(--dim);font-size:12px;text-align:center}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 @media (max-width:420px){.ms{font-size:12.5px}.mn{font-size:10px}}
@@ -200,11 +234,21 @@ footer{padding:28px 0 60px;color:var(--dim);font-size:12px;text-align:center}
       <div class="step" data-say="話說回來，你的取向是？看感情的時候我用得到。">
         <div class="opts"><input type="radio" name="orient" id="orient0" value="異性" checked><label for="orient0">異性</label><input type="radio" name="orient" id="orient1" value="同性"><label for="orient1">同性</label></div>
       </div>
-      <div class="step" data-say="把出生年月日告訴我。國曆。">
-        <div class="field"><label for="birth">出生日期（國曆）</label><input id="birth" type="date" min="1920-01-01" max="2099-12-31" required></div>
+      <div class="step" data-say="你是哪一天出生的？國曆、農曆選錯，整張盤就歪了。">
+        <div class="seg" style="margin-bottom:14px"><input type="radio" name="cal" id="calS" value="solar" checked><label for="calS">國曆</label><input type="radio" name="cal" id="calL" value="lunar"><label for="calL">農曆</label></div>
+        <div class="field" id="solarBox"><label for="birth">出生日期（國曆）</label><input id="birth" type="date" min="1920-01-01" max="2099-12-31"></div>
+        <div id="lunarBox" hidden>
+          <div class="three">
+            <div class="field"><label for="ly">農曆年</label><input id="ly" type="number" min="1920" max="2099" inputmode="numeric" placeholder="1990"></div>
+            <div class="field"><label for="lm">月</label><select id="lm"></select></div>
+            <div class="field"><label for="ld">日</label><select id="ld"></select></div>
+          </div>
+          <label class="chk"><input type="checkbox" id="leapM"> 這個月是閏月</label>
+        </div>
       </div>
       <div class="step" data-say="幾點幾分出生的？差幾分鐘，命盤就可能是另一張。">
         <div class="field"><label for="time">出生時間（時：分）</label><input id="time" type="time" required></div>
+        <p class="hint" style="margin-top:0">晚上 11 點以後出生的請照實填，是否跨日可在出生地那一題的進階設定調整。</p>
       </div>
       <div class="step" data-say="在哪裡出生？我要用經度把時間校正成真太陽時。">
         <div class="field"><label for="place">出生地</label><select id="place"></select></div>
@@ -276,6 +320,16 @@ footer{padding:28px 0 60px;color:var(--dim);font-size:12px;text-align:center}
       <p class="sub">從已儲存的命盤中選一位，命書最後會加上兩人的合盤章節。</p>
       <div class="field"><label for="partner">合盤對象</label><select id="partner"></select></div>
     </div>
+    <div class="panel">
+      <h3>AI 撰寫（選用）</h3>
+      <p class="sub">填入 Claude API 金鑰後，「現狀」與主題章節會由 AI 依你的命盤與你填的答案重寫，內容會針對你的處境。排盤仍由本機計算。金鑰只存在這台裝置；你的生辰與填寫的內容會送到 Anthropic 處理，每次約產生數萬字，會依用量計費。</p>
+      <div class="row" style="grid-template-columns:1fr auto">
+        <div class="field"><label for="akey">API 金鑰</label><input id="akey" type="password" autocomplete="off" placeholder="sk-ant-..."></div>
+        <button class="btn" id="aigo" type="button">開始撰寫</button>
+      </div>
+      <p class="sub" id="aistat" role="status" style="margin:10px 0 0"></p>
+      <button class="btn ghost" id="aiclear" type="button" hidden style="margin-top:8px">改回預寫版本</button>
+    </div>
     <div class="bar">
       <div class="count">本命書共 <b id="count">0</b> 字</div>
       <button class="btn ghost" id="print" type="button">列印／存成 PDF</button>
@@ -299,6 +353,9 @@ footer{padding:28px 0 60px;color:var(--dim);font-size:12px;text-align:center}
 <script src="data-bazi.js"></script>
 <script src="bazi.js"></script>
 <script src="report-bazi.js"></script>
+<script src="data-theme.js"></script>
+<script src="report-theme.js"></script>
+<script src="ai.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

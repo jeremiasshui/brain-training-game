@@ -187,8 +187,10 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     if (extra.partner) secs.push({ id: 'syn', title: '合盤｜' + extra.partner.name, html: ZW.synastry(chart, extra.partner.chart, extra.partner.name) });
     if (extra.bazi) { const bz = ZW.baziReport(extra.bazi, chart, extra.ctx); secs.unshift(...bz.slice(0, 5)); secs.push(bz[5]); }
     secs.push({ id: 'closing', title: '結語與說明', html: closing() });
+    let theme = null;
+    if (extra.ctx && ZW.themeBuild) { theme = ZW.themeBuild(chart, extra.bazi, extra.ctx, today, extra.ai, extra.pid || ''); secs.unshift(...theme.secs); }
     const count = secs.reduce((n, s) => n + (s.title + s.html.replace(/<[^>]+>/g, '')).replace(/\s/g, '').length, 0);
-    return { secs, count, age };
+    return { secs, count, age, theme };
   }
   ZW.R = { P, palName, join, starList, effMain, minorNote, spanHua };
   ZW.buildReport = buildReport;
