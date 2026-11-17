@@ -89,7 +89,7 @@ h2{font-size:22px;font-weight:700;margin-bottom:6px}
 .bar .count{flex:1;min-width:180px;font-size:14px;color:var(--body)}
 .bar .count b{color:var(--gold);font-size:20px}
 .bar .btn{width:auto;padding:10px 18px}
-.toc{position:sticky;top:0;z-index:5;background:rgba(253,248,236,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);
+.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:rgba(253,248,236,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);
   margin:16px -20px 0;padding:10px 20px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
 .toc::-webkit-scrollbar{display:none}
 .toc a{flex:none;font-size:13px;color:var(--body);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 12px}
@@ -176,6 +176,9 @@ textarea:focus{border-color:var(--pink)}
 .xr{display:grid;grid-template-columns:1fr 1.5fr 1.5fr .9fr;gap:6px;padding:8px 10px;font-size:13px;border-top:1px solid #eadfc6;align-items:center;color:var(--body)}
 .xr:first-child{border-top:0}.xh{color:var(--muted);font-size:12px}
 .three{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px}
+.sumbox{background:#fff4dc;border:1.5px solid var(--gold-deep);border-radius:14px;padding:12px 16px 6px;margin:6px 0 14px}
+.sumbox b{color:#b5471f;font-size:14px;letter-spacing:.2em}
+.sumbox ul{margin:6px 0 6px 18px;font-size:14.5px;color:var(--text)}.sumbox li{margin-bottom:5px}
 .chsub{color:var(--gold)!important;text-align:center!important;font-size:14.5px!important;margin-bottom:6px!important}
 .ts{border:1px solid var(--line);border-radius:14px;padding:16px 16px 6px;margin:14px 0;background:var(--panel)}
 .report .ts h4{border:0;padding:0;margin:0 0 2px;font-size:19px;display:flex;align-items:center;gap:10px}
@@ -339,9 +342,9 @@ footer{padding:28px 0 60px;color:var(--dim);font-size:12px;text-align:center}
     </div>
     <div class="panel">
       <h3>AI 撰寫（選用）</h3>
-      <p class="sub">填入 Claude API 金鑰後，「現狀」與主題章節會由 AI 依你的命盤與你填的答案重寫，內容會針對你的處境。排盤仍由本機計算。金鑰只存在這台裝置；你的生辰與填寫的內容會送到 Anthropic 處理，每次約產生數萬字，會依用量計費。</p>
+      <p class="sub" id="aidesc">填入 Claude API 金鑰後，「現狀」與主題章節會由 AI 依你的命盤與你填的答案重寫，內容會針對你的處境。排盤仍由本機計算。金鑰只存在這台裝置；你的生辰與填寫的內容會送到 Anthropic 處理，每次約產生數萬字，會依用量計費。</p>
       <div class="row" style="grid-template-columns:1fr auto">
-        <div class="field"><label for="akey">API 金鑰</label><input id="akey" type="password" autocomplete="off" placeholder="sk-ant-..."></div>
+        <div class="field" id="akeyRow"><label for="akey">API 金鑰</label><input id="akey" type="password" autocomplete="off" placeholder="sk-ant-..."></div>
         <button class="btn" id="aigo" type="button">開始撰寫</button>
       </div>
       <p class="sub" id="aistat" role="status" style="margin:10px 0 0"></p>
@@ -369,6 +372,7 @@ footer{padding:28px 0 60px;color:var(--dim);font-size:12px;text-align:center}
 <script src="report-flow.js"></script>
 <script src="data-bazi.js"></script>
 <script src="bazi.js"></script>
+<script src="insight.js"></script>
 <script src="report-bazi.js"></script>
 <script src="data-theme.js"></script>
 <script src="report-theme.js"></script>

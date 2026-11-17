@@ -55,7 +55,7 @@
   $('saved').onclick = e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.load !== undefined) { fillForm(profiles[+b.dataset.load]); run(profiles[+b.dataset.load]); }
-    else if (confirm('刪除這張已儲存的命盤？')) { profiles.splice(+b.dataset.del, 1); store.set('ziyuan.profiles', profiles); drawSaved(); drawPartners(); }
+    else arm(b, '刪除？', () => { profiles.splice(+b.dataset.del, 1); store.set('ziyuan.profiles', profiles); drawSaved(); drawPartners(); });
   };
   function drawPartners() {
     const keep = $('partner').value, cur = current && pid(current);
@@ -112,7 +112,7 @@
       (c.lunar.leap ? `出生於農曆閏${c.lunar.month}月，依設定以${c.month}月論命。` : '') +
       (Math.abs(((rt.solar.split(' ')[1].slice(0, 2) * 60 + +rt.solar.slice(-2) + 60) % 120) - 0) < 12 || ((rt.solar.split(' ')[1].slice(0, 2) * 60 + +rt.solar.slice(-2) + 60) % 120) > 108 ? '請注意：這個時間距離時辰交界不到十二分鐘，出生時間只要有些微誤差，時辰就可能不同，建議也排一次相鄰時辰的命盤比較看看哪一張更貼近自己。' : '');
     const now = new Date(), today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-    const pp = profiles.find(x => pid(x) === $('partner').value), extra = { info, bazi, ai: store.get('ziyuan.ai.' + pid(p), null), pid: pid(p), ctx: { who: who || '你', orient: p.orient, rel: p.rel, job: p.job, concern: esc(p.concern || ''), concernRaw: p.concern || '', now: now.getFullYear() } };
+    const pp = profiles.find(x => pid(x) === $('partner').value), extra = { info, bazi, ai: store.get('ziyuan.ai.' + pid(p), null), pid: pid(p), ctx: { who: who || '你', place: p.placeName, lon: p.lon, orient: p.orient, rel: p.rel, job: p.job, concern: esc(p.concern || ''), concernRaw: p.concern || '', now: now.getFullYear() } };
     if (pp) extra.partner = { name: pp.name || '對方', chart: compute(pp).chart };
     const r = ZW.buildReport(c, who, today, extra);
     $('count').textContent = r.count.toLocaleString('en-US');
@@ -133,23 +133,40 @@
     store.set('ziyuan.todo.' + pid(current), [...document.querySelectorAll('.todo input:checked')].map(x => +x.dataset.i));
   });
   $('akey').value = store.get('ziyuan.key', '');
+  let sampleBackend = null;
+  ZW.aiSample().then(b => {
+    if (!b) return;
+    sampleBackend = b; $('akeyRow').hidden = true;
+    $('aidesc').textContent = '按下按鈕後，Claude 會依你的命盤與你填的答案，重寫「現狀」與主題章節，內容會針對你的處境。用的是你自己 claude.ai 帳號的額度，第一次會先問你是否允許。全部分成 11 段，每段約一到三分鐘；中途斷掉的話，再按一次會從斷掉的地方接著寫。';
+    $('aigo').textContent = '請 Claude 撰寫';
+  });
+  if (globalThis.claude) $('print').hidden = true;   // 在 claude.ai 裡無法開啟列印視窗
   $('aigo').onclick = async () => {
-    const key = $('akey').value.trim();
     if (!current || busy) return;
-    if (!key) return void ($('aistat').textContent = '請先填入 API 金鑰。');
-    store.set('ziyuan.key', key); busy = true; $('aigo').disabled = true;
-    const id = pid(current), acc = {};
-    $('aistat').textContent = '撰寫中：第 1 段（共 ' + (lastTheme.theme.list.length + 1) + ' 段），每段約需一到數分鐘，請不要關閉頁面。';
+    let backend = sampleBackend;
+    if (!backend) {
+      const key = $('akey').value.trim();
+      if (!key) return void ($('aistat').textContent = '請先填入 API 金鑰。');
+      store.set('ziyuan.key', key); backend = ZW.aiKey(key);
+    }
+    busy = true; $('aigo').disabled = true;
+    const id = pid(current), prev = store.get('ziyuan.ai.' + id, null);
+    $('aistat').textContent = (prev ? '從上次中斷的地方接著寫' : '撰寫中') + '，每段約需一到三分鐘，請不要關閉頁面。';
     try {
-      await ZW.aiWrite(key, lastTheme.theme, lastTheme.facts, (k, data, n, total) => {
-        acc[k] = data; store.set('ziyuan.ai.' + id, acc);
+      await ZW.aiWrite(backend, lastTheme.theme, lastTheme.facts, prev, (out, n, total) => {
+        store.set('ziyuan.ai.' + id, out);
         if (current && pid(current) === id) render(false);
-        $('aistat').textContent = n < total ? `已完成 ${n}／${total} 段，繼續撰寫中⋯⋯` : `全部 ${total} 段撰寫完成（模型：${ZW.AI_MODEL}）。`;
+        $('aistat').textContent = n < total ? `已完成 ${n}／${total} 段，繼續撰寫中⋯⋯` : `全部 ${total} 段撰寫完成（${backend.label}）。`;
       });
-    } catch (e) { $('aistat').textContent = '撰寫中斷：' + e.message + (Object.keys(acc).length ? ' 已完成的段落已保留。' : ''); }
+    } catch (e) { $('aistat').textContent = '撰寫中斷：' + e.message + (store.get('ziyuan.ai.' + id, null) ? ' 已完成的段落已保留。' : ''); }
     busy = false; $('aigo').disabled = false;
   };
-  $('aiclear').onclick = () => { if (current && confirm('改回預寫版本？AI 撰寫的內容會被刪除。')) { try { localStorage.removeItem('ziyuan.ai.' + pid(current)); } catch (_) { } $('aistat').textContent = ''; render(false); } };
+  const arm = (btn, label, act) => {   // 兩段式確認：claude.ai 裡的頁面不能跳出確認視窗
+    if (btn.dataset.armed) { delete btn.dataset.armed; act(); return; }
+    const old = btn.textContent; btn.dataset.armed = '1'; btn.textContent = label;
+    setTimeout(() => { if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = old; } }, 3000);
+  };
+  $('aiclear').onclick = () => { if (current) arm($('aiclear'), '再按一次確認刪除 AI 撰寫的內容', () => { try { localStorage.removeItem('ziyuan.ai.' + pid(current)); } catch (_) { } $('aistat').textContent = ''; $('aiclear').textContent = '改回預寫版本'; render(false); }); };
 
   function setNow() {
     const n = new Date();

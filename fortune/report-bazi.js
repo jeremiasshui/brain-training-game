@@ -79,15 +79,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     return o.join('');
   }
 
-  function meet(b, c) {
-    const out = [];
-    for (let y = c.now; y <= c.now + 10; y++) {
-      const s = mod(y - 4, 10), br = mod(y - 4, 12);
-      const v = (elemOf(s) === c.mateEl ? 2 : 0) + (brElem(br) === c.mateEl ? 2 : 0) + (br === b.peach ? 2 : 0) + (HE[b.db] === br ? 1.5 : 0) + ([4, 8].includes(mod(br - b.db, 12)) ? 1 : 0) + (mod(3 - br, 12) === b.db || mod(9 - br, 12) === b.db ? 1 : 0);
-      out.push({ y, gz: STEMS[s] + BR[br], v });
-    }
-    return out.sort((a, d) => d.v - a.v || a.y - d.y).slice(0, 3).sort((a, d) => a.y - d.y);
-  }
+  const meet = (b, c) => ZW.loveYears(c.chart, b, c.mateEl, c.now, 10).top;
   function ch3(b, c) {
     const o = [], m = D.MATE[c.mateEl], ys = meet(b, c), months = [...new Set([MON(b.peach), MON(HE[b.db])])];
     const n = c.same ? 0 : b.grp(b.spouseTen);
@@ -99,7 +91,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     o.push('<h4>你的戀愛模式</h4>' + P(D.LOVE[b.P.day.tenB]));
     o.push(`<h4>緣分檔案</h4><div class="card"><div class="ct">${c.who === '你' ? '你' : c.who}的緣分檔案</div>` +
       [['相遇時期', ys.map(x => `${x.y} 年（${x.gz}）`).join('、') + `，尤其是國曆約 ${months.join('、')} 月前後`], ['職業傾向', m.job], ['外貌氣質', m.look], ['性格', m.mind], ['相遇地點', m.place]].map(([k, v]) => `<div class="cr"><b>${k}</b><span>${v}</span></div>`).join('') + '</div>' +
-      P(`這張檔案怎麼來的：對象的氣質取自你配偶星（或配偶宮）的五行${EL[c.mateEl]}；相遇時期是往後十年中，流年干支帶入配偶星、引動你的桃花（${BR[b.peach]}），或與你的日支${BR[b.db]}相合的年份。它指出的是「緣分比較容易發生的時段與類型」，不是保證在某一天遇到某一個人。那幾年請你多出門、多答應邀約，待在家裡是等不到的。`));
+      P(`這張檔案怎麼來的：對象的氣質取自你配偶星（或配偶宮）的五行${EL[c.mateEl]}；相遇時期是把紫微與八字合在一起看：往後十年中，紫微流年走到夫妻宮、紅鸞、天喜或化祿入夫妻宮，八字流年帶入配偶星、引動桃花（${BR[b.peach]}）或與日支${BR[b.db]}相合，兩邊加總最強的三年，全書其他章節講到緣分年也是這三年。它指出的是「緣分比較容易發生的時段與類型」，不是保證在某一天遇到某一個人。那幾年請你多出門、多答應邀約，待在家裡是等不到的。`));
     o.push('<h4>你吸引人的地方</h4>' + P(`你的吸引力來自日主${STEMS[b.ds]}${EL[b.me]}本身的氣質${b.shen.includes('桃花') ? '，加上命帶桃花，你不必刻意做什麼，別人就會注意到你' : b.P.day.stage === '沐浴' ? '，加上日坐沐浴，你有一種不自覺的風情' : '。你沒有帶明顯的桃花星，靠的不是第一眼，而是相處之後才顯出來的份量'}。${['正直與可靠感', '感染力與笑容', '穩重與安全感', '俐落與分寸', '聰明與神祕感'][b.me]}，是你最值錢的武器；別學別人的路線，那不適合你。`) + P(D.INTIMATE[brElem(b.db)]));
     return o.join('');
   }
@@ -115,7 +107,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     const fut = b.decades.filter(d => d.to >= age), best = fut.slice().sort((x, y) => y.score - x.score)[0];
     const yrs = Array.from({ length: 10 }, (_, i) => b.yearOf(c.now + i)), top = yrs.slice().sort((x, y) => y.score - x.score)[0], low = yrs.slice().sort((x, y) => x.score - y.score)[0];
     if (best) o.push('<h4>轉運的時間點</h4>' + P(`往後看，你最好的一步大運是 ${best.from}–${best.to} 歲的${best.gz}運（${best.y0}–${best.y0 + 9} 年）${age >= best.from ? '，你現在就走在裡面，這幾年不要浪費' : `，距離現在還有 ${best.from - age} 年，這段時間是用來準備的`}。近十年之中，氣勢最強的一年是 ${top.y} 年（${top.gz}，${top.age} 歲），適合做大的決定與主動爭取；最需要低調的一年是 ${low.y} 年（${low.gz}，${low.age} 歲），那一年以守為主。`));
-    o.push('<h4>近十年流年</h4>' + yrs.map(y => `<p><b>${y.y} 年｜${y.gz}｜${y.age} 歲</b> ${tag(lv(y.score))}<br>流年天干為${y.ten}，地支為${y.tenB}。${D.YEAR[y.ten]}${y.ten !== y.tenB ? '下半年轉為' + y.tenB + '的性質：' + D.YEAR[y.tenB] : ''}${mod(y.b - b.db, 12) === 6 ? '這一年流年沖日支，你自己與感情、居住環境容易有變動。' : ''}${mod(y.b - b.yb, 12) === 0 ? '這一年是本命年，凡事宜穩。' : ''}${y.b === b.peach ? '這一年引動桃花。' : ''}${y.b === b.horse ? '這一年引動驛馬，多走動、遷移或出國。' : ''}</p>`).join(''));
+    o.push('<h4>近十年流年</h4>' + P('這裡是八字單獨的逐年評估。把紫微流年一起合看的結論，在第四章「消長」那一節，兩者不同時以合看的為準。') + yrs.map(y => `<p><b>${y.y} 年｜${y.gz}｜${y.age} 歲</b> ${tag(lv(y.score))}<br>流年天干為${y.ten}，地支為${y.tenB}。${D.YEAR[y.ten]}${y.ten !== y.tenB ? '下半年轉為' + y.tenB + '的性質：' + D.YEAR[y.tenB] : ''}${mod(y.b - b.db, 12) === 6 ? '這一年流年沖日支，你自己與感情、居住環境容易有變動。' : ''}${mod(y.b - b.yb, 12) === 0 ? '這一年是本命年，凡事宜穩。' : ''}${y.b === b.peach ? '這一年引動桃花。' : ''}${y.b === b.horse ? '這一年引動驛馬，多走動、遷移或出國。' : ''}</p>`).join(''));
     o.push('<h4>你的處方</h4>' + P(`你最需要的五行是${EL[b.primary]}。日常可以用這些方式補：顏色用${L.color}；方位取${L.dir}，找工作、搬家、出差往這個方向比較順；數字用${L.num}；隨身或擺設可以選${L.thing}；想轉換心情時去${L.place}。適合你的行業方向是${D.MATE[b.primary].job}。`) +
       P(`這些是依五行生剋推出來的生活習慣建議，作用是提醒你把注意力放在對你有利的方向，不是護身符。真正改運的是在對的年份做對的決定。`));
     return o.join('');
@@ -124,21 +116,23 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
   function ask(b, c) {
     const o = [], t = (D.TOPIC.find(([re]) => re.test(c.concernRaw || '')) || [, ''])[1];
     const yrs = Array.from({ length: 8 }, (_, i) => b.yearOf(c.now + i)), ty = b.yearOf(c.now);
-    const goodY = yrs.filter(y => lv(y.score) === '吉').map(y => y.y), badY = yrs.filter(y => lv(y.score) === '慎').map(y => y.y);
-    if (D.JOB[c.job]) o.push('<h4>你現在的工作狀態</h4>' + P(D.JOB[c.job]) + P(`對照你的命盤：${D.GE[b.P.month.tenB]}喜用神是${EL[b.primary]}，對應的行業是${D.MATE[b.primary].job}。${c.now} 年的流年是${ty.gz}（${ty.ten}、${ty.tenB}），評估為「${lv(ty.score)}」：${D.YEAR[ty.ten]}往後幾年中，適合進取的年份是 ${goodY.join('、') || '暫時沒有特別突出的一年'}；需要保守的年份是 ${badY.join('、') || '沒有特別需要迴避的一年'}。`));
+    const ol = ZW.outlook(c.chart, b, c.now, 8), goodY = ol.good.map(y => y.y), badY = ol.bad.map(y => y.y);
+    if (D.JOB[c.job]) o.push('<h4>你現在的工作狀態</h4>' + P(D.JOB[c.job]) + P(`對照你的命盤：${D.GE[b.P.month.tenB]}喜用神是${EL[b.primary]}，對應的行業是${D.MATE[b.primary].job}。${c.now} 年的流年是${ty.gz}（${ty.ten}、${ty.tenB}），八字單看評為「${lv(ty.score)}」：${D.YEAR[ty.ten]}往後八年中（紫微與八字合看），相對最適合進取的是 ${goodY.join('、')}；最需要保守的是 ${badY.join('、')}。`));
     if (c.concern) {
       o.push(`<h4>你問的事</h4>` + say(`你說：「${c.concern}」。好，我直接回答。`));
       const m = D.MATE[c.mateEl], ms = meet(b, c);
       const A = {
         感情: `這是感情的問題。先看你自己：${D.LOVE[b.P.day.tenB]}再看時機：往後十年裡，緣分最容易動的年份是 ${ms.map(x => x.y).join('、')}。你命中適合的對象，氣質是「${m.mind}」，外型傾向「${m.look}」。如果你心裡已經有一個具體的條件清單，請拿它跟這個比一比：命盤顯示的是跟你長久合得來的類型，而你想要的與適合你的，未必是同一種人。條件抓得太死，會把真正的緣分擋在門外。`,
-        錢財: `這是錢的問題。你的日主${b.level}，財星占 ${Math.round(b.w[b.rel(2)] / b.total * 100)}%。往後幾年適合積極求財的年份是 ${goodY.join('、') || '暫時沒有'}，需要保守的是 ${badY.join('、') || '沒有'}。在保守的年份，不借錢、不擔保、不重押；在進取的年份，把力氣集中在一條最有把握的財路上。你最大的漏財點我在第二章寫了，先把那個洞補起來，比多賺一份更有效。`,
+        錢財: `這是錢的問題。你的日主${b.level}，財星占 ${Math.round(b.w[b.rel(2)] / b.total * 100)}%。往後幾年適合積極求財的年份是 ${goodY.join('、')}，需要保守的是 ${badY.join('、')}。在保守的年份，不借錢、不擔保、不重押；在進取的年份，把力氣集中在一條最有把握的財路上。你最大的漏財點我在第二章寫了，先把那個洞補起來，比多賺一份更有效。`,
         事業: `這是事業的問題。${D.GE[b.P.month.tenB]}你現在走的是${ty.dec ? ty.dec.gz + '大運（' + ty.dec.ten + '、' + ty.dec.tenB + '）' : '起運前的階段'}，${ty.dec ? D.DEC[ty.dec.ten] : ''}要不要動，看年份：${goodY.length ? goodY[0] + ' 年是最近一個適合轉換或爭取的時機' : '近幾年沒有特別強的轉換時機，宜先累積'}${badY.length ? '；' + badY[0] + ' 年則不宜貿然離開穩定的位置' : ''}。`,
         健康: `這是身體與心理的問題。${D.EL_MANY[b.w.indexOf(Math.max(...b.w))]}${D.EL_FEW[b.w.indexOf(Math.min(...b.w))]}${badY.length ? badY.join('、') + ' 年走忌神，是身心壓力比較大的年份，請提前安排檢查與休息。' : ''}命理只能指出體質的傾向，身體不舒服、睡不好或情緒長期低落，請直接找醫師或心理專業人員，不要用算命代替看診。`,
         家庭: `這是家人的問題。你的年柱是${b.P.year.gz}（${b.P.year.ten}、${b.P.year.tenB}），代表祖上與早年家境；月柱是${b.P.month.gz}（${b.P.month.ten}、${b.P.month.tenB}），代表父母與兄弟。印星看母親與長輩的庇護，你有 ${b.grp(4)} 個；財星在傳統上也看父親，你有 ${b.grp(2)} 個。${b.grp(4) === 0 ? '印星不現，你與長輩之間比較缺少理所當然的依靠，很多事習慣自己扛。' : '印星在局，長輩緣是有的，只是表達方式未必是你想要的。'}家人之間的事，命盤能告訴你的是彼此的節奏差在哪裡，解法還是在開口談。`,
         學業遷移: `這是學業或遷移的問題。${b.shen.includes('文昌') ? '你命帶文昌，讀書與考試有先天的優勢。' : '你沒有帶文昌，考運靠的是準備而非天分，請把時間拉長。'}${b.shen.includes('驛馬') ? '你命帶驛馬，離開出生地發展對你有利。' : '你沒有帶驛馬，遠行不是必要，但走到驛馬年可以動。'}往後幾年中，流年地支走到${BR[b.horse]}（驛馬）的年份是 ${yrs.filter(y => y.b === b.horse).map(y => y.y).join('、') || '近八年沒有'}，適合搬遷與出國；印星旺的年份適合考試與進修：${yrs.filter(y => TENG[y.ten] === 4 || TENG[y.tenB] === 4).map(y => y.y).join('、') || '近八年不明顯'}。`
       };
-      o.push(P(A[t] || `你問的事我沒辦法歸到感情、錢財、事業、健康、家庭或學業其中一類，所以我用整體的運勢回答你。${c.now} 年流年${ty.gz}，評估為「${lv(ty.score)}」：${D.YEAR[ty.ten]}往後幾年適合主動的年份是 ${goodY.join('、') || '暫時沒有'}，需要保守的是 ${badY.join('、') || '沒有'}。任何重大的決定，放在適合主動的年份去做。`));
-      o.push(P('說明：這一段是依你輸入的文字判斷主題，再從命盤取出相關的資料來回答，並不是逐字理解你的句子。問題寫得越具體（例如「明年該不該換工作」），對應得越準。'));
+      o.push(P(A[t] || `你問的事我沒辦法歸到感情、錢財、事業、健康、家庭或學業其中一類，所以我用整體的運勢回答你。${c.now} 年流年${ty.gz}，評估為「${lv(ty.score)}」：${D.YEAR[ty.ten]}往後幾年適合主動的年份是 ${goodY.join('、')}，需要保守的是 ${badY.join('、')}。任何重大的決定，放在適合主動的年份去做。`));
+      const q = ZW.readConcern(c.concernRaw, c.now), notes = ZW.concernNotes(c.chart, b, c, q);
+      if (notes.length) o.push(`<h4>逐項看你寫的條件</h4>` + notes.map(n => `<p><b>${n.title}</b>　${n.text}</p>`).join(''));
+      o.push(P(`說明：這一段會從你寫的句子裡抓出生肖、年齡、地點與年份${q.items.length ? `（這次抓到的是：${join(q.items)}）` : ''}，逐項對照命盤；其餘的文字只用來判斷主題，不是逐字理解。想要逐字回應你的處境，請使用 AI 撰寫。`));
     }
     return o.join('') || P('你沒有填寫工作狀態與煩惱。回到上方重新問診並填寫，這一章就會針對你的處境回答。');
   }
@@ -155,7 +149,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
   }
 
   ZW.baziReport = function (b, chart, ctx) {
-    const c = Object.assign({}, ctx); c.same = ctx.orient === '同性'; c.mateEl = c.same ? brElem(b.db) : b.spouseEl;
+    const c = Object.assign({}, ctx); c.chart = chart; c.same = ctx.orient === '同性'; c.mateEl = c.same ? brElem(b.db) : b.spouseEl;
     return [
       { id: 'bz1', title: '八字一｜你這個人', html: ZW.baziTable(b) + ch1(b, c) },
       { id: 'bz2', title: '八字二｜錢與貴人', html: ch2(b, c) },

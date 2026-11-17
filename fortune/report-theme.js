@@ -23,22 +23,21 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     };
     const nowY = today.getUTCFullYear(), ly = ZW.toLunar(nowY, today.getUTCMonth() + 1, today.getUTCDate()).year, age = ly - chart.lunar.year + 1;
     const dec = chart.decades.find(d => age >= d.from && age <= d.to) || chart.decades[0];
-    const years = Array.from({ length: 10 }, (_, i) => { const yi = ZW.yearInfo(chart, ly + i), r = ZW.rate(chart, yi.b, yi.s), by = bazi ? bazi.yearOf(ly + i) : null; return { yi, r, by, tot: r.score + (by ? by.score * 3 : 0) }; });
-    const rk = years.slice().sort((x, y) => y.tot - x.tot); years.forEach(y => { const i = rk.indexOf(y); y.tag = i < 3 ? '宜進' : i > 6 ? '宜守' : '平'; });   // 十年內的相對排序
-    return { R, chart, bazi, c, cell, eff, line, score, lv, at, fly, ly, age, dec, years };
+    const years = ZW.outlook(chart, bazi, ly, 10), love = ZW.loveYears(chart, bazi, c.mateEl, ly, 10), q = ZW.readConcern(c.concernRaw, ly);
+    const notes = ZW.concernNotes(chart, bazi, Object.assign({}, c, { now: ly }), q);
+    return { R, chart, bazi, c, cell, eff, line, score, lv, at, fly, ly, age, dec, years, love, q, notes };
   }
 
   /* ---------- 各節內容 ---------- */
   function chapters(k) {
-    const { chart, bazi, c, cell, eff, line, score, lv, at, fly, dec, years, R } = k, H = chart.hua, M = ZW.MAIN, j = R.join;
+    const { chart, bazi, c, cell, eff, line, score, lv, at, fly, dec, years, R, love, q, notes } = k, H = chart.hua, M = ZW.MAIN, j = R.join;
     const main = p => eff(p).stars.map(s => M[s][p]).join(''), borrowed = p => eff(p).borrowed ? `你的${pn(p)}沒有主星，這個領域先天沒有固定的模式，容易受環境與身邊的人影響；以下借對宮的星來看，力量約打七折。` : '';
     const pair = p => { const src = cell(p).main.length ? cell(p) : chart.cells[mod(cell(p).i + 6, 12)]; return src.main.length === 2 ? ZW.PAIR[src.main.map(s => s.name).join('')] || '' : ''; };
     const huaAt = h => `${H[h]}化${h}，在${pn(at(H[h]))}`;
     const sf0 = ZW.sanfang(chart, chart.ming), empties = [...Array(12).keys()].filter(p => !cell(p).main.length);
     const types = p => [...new Set(cell(p).minor.map(s => ZW.typeOf(s.name)))];
     const yl = y => `${y.yi.ly} 年（${STEMS[y.yi.s]}${BR[y.yi.b]}，${y.yi.age} 歲）`;
-    const best = years.slice().sort((a, b) => b.tot - a.tot)[0], worst = years.slice().sort((a, b) => a.tot - b.tot)[0];
-    const luan = years.filter(y => [chart.pos.紅鸞, chart.pos.天喜, cell(2).i].includes(y.yi.b));
+    const best = years.best, worst = years.worst, lyTxt = j(love.top.map(ZW.loveYearText));
     const f = {};
     const S = (basis, flies, body) => ({ basis, flies: flies.filter(Boolean), body: body.filter(Boolean) });
     const jiP = at(H.忌), f03 = fly(0, 3);
@@ -67,7 +66,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
       S([['夫妻宮干', cell(2).stem], ['生年化忌', huaAt('忌')]], [f23], [f23.text, f23.dp === 0 ? '夫妻宮的忌飛進命宮：關係裡出的問題，會原封不動變成你對自己的判決。而且下判決的是你自己，不是對方。' : f23.dp === 10 ? '夫妻宮的忌飛進福德宮：感情的事會直接佔滿你的腦子，結束之後心還停在那裡，是因為你一直在腦中重演。' : `感情結束之後，你放不下的其實不是那個人，而是它在「${th(f23.dp)}」上留下的那個沒解完的結。`]),
       S([['夫妻宮輔星', j(cell(2).minor.map(s => s.name)) || '無'], ['福德宮', line(10)]], [], [...types(2).map(t => ZW.TYPE_PAL[t][2]), ...cell(2).minor.map(s => ZW.MINOR[s.name].c), cell(2).minor.length ? '' : '你的夫妻宮沒有煞星與桃花星，戀愛中的不安不是對方造成的，多半來自你自己的福德宮：' + first(main(10), 2)]),
       S([['夫妻宮三方四正', `吉星 ${sf2.ji.length}、煞星 ${sf2.sha.length}${sf2.hua.length ? '、' + j(sf2.hua) : ''}`], ['評估', lv(sf2.score)]], [], [`夫妻宮要連同對面的官祿宮、三合的遷移宮與福德宮一起看。你這四個宮位合計${sf2.ji.length ? '有' + j(sf2.ji) + '相助' : '沒有吉星'}${sf2.sha.length ? '，也有' + j(sf2.sha) + '同時作用' : ''}。${sf2.score < 0 ? '感情對你是需要學的事，同樣的問題會換個人再來一次，直到你換一種做法。' : '感情的基本條件不差，重複出現的問題多半不在對象，而在你進入關係後的固定反應。'}`, bazi ? '八字的日支說的是同一件事：' + ZW.BZ.LOVE[bazi.P.day.tenB] : '']),
-      S([['紅鸞・天喜', pn(at('紅鸞')) + '・' + pn(at('天喜'))], ['近十年引動的年份', luan.length ? j(luan.map(y => y.yi.ly)) : '無']], [], [['你現在未婚。往後的緣分是新的開始還是舊戲重演，看的不是對方，是你這次有沒有換一種方式開始。', '你現在有交往的對象。這個人能不能從戀愛走進生活，關鍵在你們怎麼處理第一次真正的利害衝突：錢、家人、住哪裡。', '你已經結婚。現在看的不是緣分來不來，而是兩個人還能不能看向同一個地方。'][relKey], luan.length ? `往後十年中，流年走到紅鸞、天喜或你的夫妻宮的年份是 ${j(luan.map(yl))}。${['這幾年是緣分最容易動的時候，請多出門、多答應邀約。', '這幾年適合把關係往下一步推：見家長、同居、訂婚或結婚。', '這幾年夫妻關係容易有新的變化，可以是重新靠近，也可能是外來的誘惑，要有意識地經營。'][relKey]}` : '往後十年沒有明顯引動紅鸞、天喜的年份，緣分的進展靠的是日常的經營而非時機。', bazi && c.mateEl !== undefined ? `八字上配偶星屬${ZW.EL[c.mateEl]}，合得來的對象氣質是「${ZW.BZ.MATE[c.mateEl].mind}」。` : '']),
+      S([['紅鸞・天喜', pn(at('紅鸞')) + '・' + pn(at('天喜'))], ['往後十年的緣分年', lyTxt]], [], [['你現在未婚。往後的緣分是新的開始還是舊戲重演，看的不是對方，是你這次有沒有換一種方式開始。', '你現在有交往的對象。這個人能不能從戀愛走進生活，關鍵在你們怎麼處理第一次真正的利害衝突：錢、家人、住哪裡。', '你已經結婚。現在看的不是緣分來不來，而是兩個人還能不能看向同一個地方。'][relKey], `把紫微與八字合起來看，往後十年緣分最容易動的是 ${lyTxt}。` + love.top.map(t => `${t.y} 年：${ZW.loveYearWhy(t)}`).join('') + ['這幾年是緣分最容易動的時候，請多出門、多答應邀約。', '這幾年適合把關係往下一步推：見家長、同居、訂婚或結婚。', '這幾年夫妻關係容易有新的變化，可以是重新靠近，也可能是外來的誘惑，要有意識地經營。'][relKey], ...notes.filter(n => !/年$/.test(n.title)).map(n => `關於你寫的「${n.title}」：${n.text}`), bazi && c.mateEl !== undefined ? `八字上配偶星屬${ZW.EL[c.mateEl]}，合得來的對象氣質是「${ZW.BZ.MATE[c.mateEl].mind}」。` : '']),
       S([['夫妻宮干化祿', f20.head]], [f20], [f20.text, `值得你留下的人，是能讓你在「${th(f20.dp)}」上變得更好的人。` + eff(2).stars.map(s => ZW.STAR_LOVE[s]).join('')])
     ];
     const dc = chart.cells[dec.b], fd = HUA[dc.stem], dJ = at(fd[3]), dL = at(fd[0]), f73 = fly(7, 3);
@@ -79,7 +78,15 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
       S([['大限化忌', `${fd[3]}化忌，落本命${pn(dJ)}`], ['大限化祿', `${fd[0]}化祿，落本命${pn(dL)}`]], [], [`這個大限的化忌落在本命${pn(dJ)}。這十年你最該放下的，是對「${th(dJ)}」的執著：越想抓緊，它越卡住你。`, `相對地，大限化祿落在本命${pn(dL)}，「${th(dL)}」是這十年最願意回報你的地方。把從前者省下來的力氣，放到後者。`, T.STOP[dJ]]),
       S([['寫信的時間', `${k.ly + 10} 年，你 ${k.age + 10} 歲`]], [], [`給 ${k.ly} 年的我：`, `你現在最煩的那件事，十年後回頭看，只是「${th(jiP)}」這門功課的其中一堂。我沒有變成另一個人，我只是不再用老方法處理它了。`, `${best.yi.ly} 年那個機會，謝謝你沒有因為害怕而放掉；${worst.yi.ly} 年那一次，謝謝你忍住沒有硬衝。`, `你一直以為要先解決「${th(jiP)}」才能開始過日子。其實是反過來：你把力氣放到「${th(at(H.祿))}」之後，那件事才慢慢鬆開。`, '命盤上寫的那些，我都遇到了。但怎麼走過去，是你一步一步選的。'])
     ];
-    const pv = chart.decades.filter(d => [9, 11].includes(chart.cells[d.b].p)).map(d => `${d.from}–${d.to} 歲（大限走${pn(chart.cells[d.b].p)}）`), f113 = fly(11, 3), f33 = fly(3, 3);
+    const es = p => (eff(p).borrowed ? '借對宮' : '') + j(eff(p).stars);
+    const lead = st => st.map(x => T.FACE[x][0][0] + '，但' + T.FACE[x][0][1]).join('；');
+    f.sum = {
+      c1: [`你的本質：命宮${eff(0).borrowed ? '借對宮' : ''}${j(eff(0).stars)}，${lead(eff(0).stars)}。`, `反覆卡住的地方：生年化忌在${pn(jiP)}，也就是「${th(jiP)}」。`, `最省力的方向：化祿在${pn(at(H.祿))}，把力氣放在「${th(at(H.祿))}」回報最高。`],
+      c2: [`財帛宮${es(4)}，三方${lv(score(4))}。`, `錢最容易漏在：財帛宮的化忌飛入${pn(f43.dp)}，「${th(f43.dp)}」。`, score(9) >= score(4) ? '存不存得住：田宅宮不弱於財帛宮，存得住，適合轉成長期資產。' : '存不存得住：財帛宮強過田宅宮，賺得到但容易花掉，要靠強制儲蓄。'],
+      c3: [ZW.STAR_LOVE[eff(2).stars[0]], `緣分最容易動的年份：${lyTxt}。`, f23.dp === 0 ? '你要改的：別把關係裡的問題，變成對自己的判決。' : `你要改的：別讓感情的結一直卡在「${th(f23.dp)}」。`].concat(q.items.length ? [`你寫下的條件（${j(q.items)}）在第五節「去留」逐項對照。`] : []),
+      c4: [`這十年的主題：${first(ZW.DECADE_PAL[dc.p])}`, `最順的一年是 ${yl(best)}，最需保守的一年是 ${yl(worst)}。`, `這十年要放下的是「${th(dJ)}」，要投入的是「${th(dL)}」。`]
+    };
+    const pv = chart.decades.filter(d => [9, 11].includes(chart.cells[d.b].p) && d.to >= k.age).map(d => `${d.from}–${d.to} 歲（大限走${pn(chart.cells[d.b].p)}）`), f113 = fly(11, 3), f33 = fly(3, 3);
     f.pa = [
       S([['父母宮', line(11)]], [], [borrowed(11), main(11)]),
       S([['父母宮干化祿', fly(11, 0).head]], [fly(11, 0)], [fly(11, 0).text, `父母給你最實在的東西，落在你的「${th(fly(11, 0).dp)}」。兄弟宮是${line(1)}：${first(main(1), 2)}`]),
@@ -88,6 +95,8 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
       S([['田宅宮', line(9)], ['相關大限', j(pv) || '無']], [], [first(main(9), 3), pv.length ? `你的大限走到田宅宮或父母宮的年紀是 ${j(pv)}。這些年是家裡的居住、照顧與財務最需要重新安排的時候，宜提早談。` : '']),
       S([['父母宮評估', lv(score(11))]], [], [ZW.PAL_ADVICE[11][score(11) < 0 ? 1 : 0], '該還的是時間、照顧與一句說出口的感謝；不必交出去的，是你對自己人生的決定權。'])
     ];
+    f.sum.pa = [`父母宮${es(11)}，三方${lv(score(11))}。`, `你們的爭執最後總會繞回「${th(f113.dp)}」。`, pv.length ? `家裡最需要重新安排的年紀：${j(pv)}。` : '往後的大限不會再走到田宅宮或父母宮，家裡的安排可以按部就班，不必等某個時間點。'];
+    f.sum.ch = [`子女宮${es(3)}，三方${lv(score(3))}。`, `孩子帶來的光，照在你的「${th(fly(3, 0).dp)}」。`, `你最可能傳下去的，是在「${th(jiP)}」上還沒處理完的東西。`];
     f.ch = [
       S([['子女宮', line(3)]], [], [borrowed(3), main(3)]),
       S([['子女宮干化祿', fly(3, 0).head]], [fly(3, 0)], [fly(3, 0).text, `孩子帶給你的那道光，會照在你的「${th(fly(3, 0).dp)}」上。`]),
@@ -117,16 +126,16 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     const faces = a.faces && a.faces.length ? a.faces.map(f => [esc(f.outer), esc(f.inner)]) : [...eff(0).stars, ...eff(10).stars].flatMap(s => T.FACE[s]).slice(0, 4);
     const punch = a.punch ? [esc(a.punch.not), esc(a.punch.is)] : T.PUNCH[jiP];
     const M = ZW.MAIN, one = p => first(M[eff(p).stars[0]][p], 2);
-    const now = a.now ? ['money', 'work', 'love', 'home', 'body'].map(x => esc(a.now[x])) : [one(4), (D(c.job) ? first(D(c.job), 2) : '') + first(M[eff(8).stars[0]][8]), (ZW.BZ.REL[c.rel] ? first(ZW.BZ.REL[c.rel]) : '') + first(M[eff(2).stars[0]][2]), one(9), one(5)];
+    const now = a.now ? ['money', 'work', 'love', 'home', 'body'].map(x => esc(a.now[x])) : [one(4), (D(c.job) ? first(D(c.job), 2) : '') + first(M[eff(8).stars[0]][8]), (ZW.BZ.REL[c.rel] ? first(ZW.BZ.REL[c.rel]) : '') + (k.q.zodiac.length || k.q.places.length || k.q.ages.length ? `你想找的是${k.q.items.filter(x => !/年$|今年|明年|後年/.test(x)).join('、')}的人，條件很清楚；但你夫妻宮的${eff(2).stars[0]}說的是另一件事：${first(M[eff(2).stars[0]][2])}` : first(M[eff(2).stars[0]][2])), one(9), one(5)];
     return `<div class="card2"><div class="cr"><b>農曆</b><span>${chart.yearGZ}年 ${chart.lunar.leap ? '閏' : ''}${chart.lunar.month}月 ${chart.lunar.day}日</span></div><div class="cr"><b>生時</b><span>${BR[chart.hour]}時・${chart.yang ? '陽' : '陰'}${chart.gender}</span></div><div class="cr"><b>命宮</b><span>${line(0)}</span></div><div class="cr"><b>生年忌</b><span>${chart.hua.忌}，在${pn(jiP)}</span></div></div>` +
-      (c.concern ? `<p class="say">你說：「${c.concern}」。這件事我記下了。先從你這個人看起，答案多半在裡面。</p>` : '<p class="say">先別急。我先說你現在的樣子，再說為什麼，最後說往哪裡走。</p>') +
+      (c.concern ? `<p class="say">你說：「${c.concern}」。這件事我記下了。先從你這個人看起，答案多半在裡面。</p>${k.q.items.length ? `<p>你寫下的條件有：${k.q.items.map(x => '「' + x + '」').join('、')}。每一個我都會對照命盤，答案在第三章「去留」與八字第五章。</p>` : ''}` : '<p class="say">先別急。我先說你現在的樣子，再說為什麼，最後說往哪裡走。</p>') +
       `<div class="faces"><div class="fh"><span>別人看到的 <b>表</b></span><span><b class="li">裏</b> 實際上的</span></div>${faces.map(f => `<div class="fr"><span>${f[0]}</span><span>${f[1]}</span></div>`).join('')}</div>` +
       `<p class="punch">${punch[0]}<br><strong>${punch[1]}</strong></p>` +
       `<h4>這本命書會講到的</h4><div class="nowg">${['錢', '工作', '感情', '家裡', '身體'].map((n, i) => `<div><b>${n}</b><span>${now[i]}</span></div>`).join('')}</div>` +
       `<p>迷茫不是壞事，它只是在告訴你：原來的走法該換了。你為這些事煩惱是有原因的，原因就在命盤上。紫微斗數是一張十二格的地圖，把你這輩子會碰到的十二件事各分一格，再看哪一顆星落進哪一格。它看的是結構：什麼東西放在哪裡、彼此怎麼拉扯，所以答得出「為什麼每次都這樣」。以下四章，每一節都從你盤上的某一格出發，先列出盤面依據，再說白話，最後給你兩個選項與各自的代價。</p>`;
   }
   function actions(k, pid) {
-    const { chart, bazi, at, years, fly } = k, H = chart.hua, jiP = at(H.忌), best = years.slice().sort((a, b) => b.tot - a.tot)[0], worst = years.slice().sort((a, b) => a.tot - b.tot)[0];
+    const { chart, bazi, at, years, fly } = k, H = chart.hua, jiP = at(H.忌), best = years.best, worst = years.worst;
     const items = [
       `這個月：把「${th(jiP)}」上拖最久的那一件事寫下來，只寫事實，不寫感覺。`,
       `這個月：在「${th(at(H.祿))}」上多做一件事。這是你化祿所在，力氣花在這裡回報最高。`,
@@ -144,7 +153,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
   ZW.themeBuild = function (chart, bazi, c, today, ai, pid) {
     const k = ctxOf(chart, bazi, c, today), data = chapters(k), list = [...CH, appx(c)]; ai = ai || {};
     const secs = [{ id: 'now', title: '現狀', html: intro(k, ai.intro) }];
-    list.forEach(([key, title, sub]) => secs.push({ id: key, title, html: `<p class="chsub">${sub}</p>` + T.SEC[key].map((d, n) => renderSec(d, data[key][n], n, (ai[key] || [])[n])).join(''), ai: !!ai[key] }));
+    list.forEach(([key, title, sub]) => secs.push({ id: key, title, html: `<p class="chsub">${sub}</p><div class="sumbox"><b>先說結論</b><ul>${(data.sum[key] || []).map(x => `<li>${x}</li>`).join('')}</ul></div>` + T.SEC[key].map((d, n) => renderSec(d, data[key][n], n, (ai[key] || [])[n])).join(''), ai: !!ai[key] }));
     secs.push({ id: 'act', title: '行動表與停損線', html: actions(k, pid) });
     return { secs, data, list, k };
   };
@@ -158,6 +167,8 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     for (let p = 0; p < 12; p++) L.push(`${pn(p)}：${k.line(p)}；大限 ${k.cell(p).decade.join('–')} 歲；三方${k.lv(k.score(p))}；宮干化祿入${pn(k.fly(p, 0).dp)}、化忌入${pn(k.fly(p, 3).dp)}${k.fly(p, 3).dup ? '（與生年忌同位）' : ''}`);
     L.push(`【目前大限】${k.dec.from}–${k.dec.to} 歲，在本命${pn(chart.cells[k.dec.b].p)}`);
     L.push('【往後十年】' + k.years.map(y => `${y.yi.ly}${STEMS[y.yi.s]}${BR[y.yi.b]}（流年命宮在本命${pn(chart.cells[y.yi.b].p)}，${y.tag}）`).join('、'));
+    L.push('【緣分年（兩套合看，全書一致）】' + k.love.top.map(t => ZW.loveYearText(t) + '：' + ZW.loveYearWhy(t)).join(' '));
+    if (k.notes.length) L.push('【心事中的條件，程式已對照命盤】' + k.notes.map(n => n.title + '：' + n.text).join(' '));
     if (bazi) L.push(`【八字】${bazi.list.map(p => p.gz).join(' ')}；日主${STEMS[bazi.ds]}${ZW.EL[bazi.me]}，${bazi.level}；月令${bazi.P.month.tenB}；日支${bazi.P.day.tenB}；喜用${bazi.favor.map(e => ZW.EL[e]).join('')}，最喜${ZW.EL[bazi.primary]}；忌${bazi.avoid.map(e => ZW.EL[e]).join('')}；十神：${Object.entries(bazi.tens).map(([a, b]) => a + b).join('、')}；神煞：${bazi.shen.join('、') || '無'}；目前大運：${(bazi.decades.find(d => k.age >= d.from && k.age <= d.to) || {}).gz || '未起運'}`);
     return L.join('\n');
   };
