@@ -162,13 +162,18 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
   ZW.factSheet = function (chart, bazi, c, k) {
     const L = [];
     L.push(`【命主】稱呼：${c.who}；性別：${chart.gender}；取向：${c.orient}；感情狀態：${c.rel}；工作狀態：${c.job}；虛歲：${k.age}；今年：${k.ly}`);
+    L.push(`【今天】國曆 ${new Date().toISOString().slice(0, 10)}；出生地：${c.place || '未填'}；生肖屬${ZW.ZODIAC[chart.yb]}`);
     L.push(`【命主寫下的心事】${c.concernRaw || '（未填）'}`);
     L.push(`【紫微斗數】農曆${chart.yearGZ}年${chart.lunar.month}月${chart.lunar.day}日${BR[chart.hour]}時，${chart.element}${chart.ju}局，命主${chart.mingZhu}，身主${chart.shenZhu}，身宮在${pn(chart.cells[chart.shen].p)}，生年四化：${HUA_NAMES.map(h => chart.hua[h] + '化' + h + '在' + pn(k.at(chart.hua[h]))).join('、')}`);
     for (let p = 0; p < 12; p++) L.push(`${pn(p)}：${k.line(p)}；大限 ${k.cell(p).decade.join('–')} 歲；三方${k.lv(k.score(p))}；宮干化祿入${pn(k.fly(p, 0).dp)}、化忌入${pn(k.fly(p, 3).dp)}${k.fly(p, 3).dup ? '（與生年忌同位）' : ''}`);
     L.push(`【目前大限】${k.dec.from}–${k.dec.to} 歲，在本命${pn(chart.cells[k.dec.b].p)}`);
+    L.push('【全部大限】' + chart.decades.filter(d => d.from <= 95).map(d => `${d.from}–${d.to} 歲在本命${pn(chart.cells[d.b].p)}（${ZW.R.effMain(chart, chart.cells[d.b]).stars.join('、')}，大限化忌入本命${pn(chart.cells[chart.pos[HUA[chart.cells[d.b].stem][3]]].p)}）`).join('；'));
+    const LMN = ['', '正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'], md = d => `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+    [k.ly, k.ly + 1].forEach(y => { try { const yi = ZW.yearInfo(chart, y); L.push(`【${y} 年流月】` + ZW.lunarMonths(y).map(m => { const mi = ZW.monthInfo(yi, m.month), r = ZW.rate(chart, mi.b, mi.s); return `農曆${m.leap ? '閏' : ''}${LMN[m.month]}月（國曆 ${md(m.start)}–${md(m.end)}）流月命宮在本命${pn(chart.cells[mi.b].p)}，評${r.level}`; }).join('；')); } catch (_) { } });
     L.push('【往後十年】' + k.years.map(y => `${y.yi.ly}${STEMS[y.yi.s]}${BR[y.yi.b]}（流年命宮在本命${pn(chart.cells[y.yi.b].p)}，${y.tag}）`).join('、'));
     L.push('【緣分年（兩套合看，全書一致）】' + k.love.top.map(t => ZW.loveYearText(t) + '：' + ZW.loveYearWhy(t)).join(' '));
     if (k.notes.length) L.push('【心事中的條件，程式已對照命盤】' + k.notes.map(n => n.title + '：' + n.text).join(' '));
+    if (bazi) L.push('【八字大運】' + bazi.decades.map(d => `${d.from}–${d.to} 歲（${d.y0}–${d.y0 + 9} 年）${d.gz}運，${d.ten}／${d.tenB}`).join('；'));
     if (bazi) L.push(`【八字】${bazi.list.map(p => p.gz).join(' ')}；日主${STEMS[bazi.ds]}${ZW.EL[bazi.me]}，${bazi.level}；月令${bazi.P.month.tenB}；日支${bazi.P.day.tenB}；喜用${bazi.favor.map(e => ZW.EL[e]).join('')}，最喜${ZW.EL[bazi.primary]}；忌${bazi.avoid.map(e => ZW.EL[e]).join('')}；十神：${Object.entries(bazi.tens).map(([a, b]) => a + b).join('、')}；神煞：${bazi.shen.join('、') || '無'}；目前大運：${(bazi.decades.find(d => k.age >= d.from && k.age <= d.to) || {}).gz || '未起運'}`);
     return L.join('\n');
   };

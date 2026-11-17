@@ -144,7 +144,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
   };
 
   /* ---------- 合盤 ---------- */
-  ZW.synastry = function (A, B, nb) {
+  ZW.synastry = function (A, B, nb, Ab, Bb, ctx) {
     const out = [], em = (ch, p) => join(eff(ch, ch.byPalace(p)).stars);
     const swap = s => s.replace(/你們/g, '\u0002').replace(/你/g, '\u0001').replace(/對方|他/g, '你').replace(/\u0001/g, nb).replace(/\u0002/g, '你們');
     out.push(P(`合盤是把兩張命盤疊在一起看：對方的命宮落在你的哪一宮，代表對方在你生命中扮演的角色；兩人的生年四化飛入對方的哪些宮位，代表彼此給對方帶來什麼。以下的「你」指本命盤的主人，另一方是${nb}。`));
@@ -159,7 +159,29 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     const mf = (X, Y, sub, obj) => { const f = HUA[X.cells[X.ming].stem], p0 = Y.cells[Y.pos[f[0]]].p, p3 = Y.cells[Y.pos[f[3]]].p; return P(`${sub}的命宮宮干為「${X.cells[X.ming].stem}」：化祿（${f[0]}）落入${obj}的${palName(p0)}，表示${sub}本人的善意最容易照顧到${obj}的「${ZW.PAL_THEME[p0]}」；化忌（${f[3]}）落入${obj}的${palName(p3)}，表示${sub}的執著最容易讓${obj}在「${ZW.PAL_THEME[p3]}」上感到壓力。`); };
     out.push(`<h4>命宮飛化</h4>` + mf(A, B, '你', nb) + mf(B, A, nb, '你'));
     const core = [0, 2, 10], hitA = core.includes(B.cells[B.pos[A.hua.忌]].p), hitB = core.includes(A.cells[A.pos[B.hua.忌]].p);
+    if (Ab && Bb) out.push(ZW.baziSynastry(A, B, Ab, Bb, nb, ctx || {}));
     out.push(`<h4>合盤小結</h4>` + P(`助力的流向：${join(good)}。壓力的流向：${join(bad)}。${hitA || hitB ? `其中化忌落入對方的命宮、夫妻宮或福德宮（${[hitA ? '你→' + nb : '', hitB ? nb + '→你' : ''].filter(Boolean).join('、')}），代表這段關係中有一方會讓另一方特別放不下，牽掛深、要求也多，是緣分深但需要磨合的組合。` : '兩人的化忌都沒有落入對方的命宮、夫妻宮或福德宮，相處上的直接壓力較小。'}合盤看的是兩個人互動的模式，而非好壞的判決：化祿的方向是彼此可以多給的，化忌的方向是彼此需要多體諒的。`));
     return out.join('');
+  };
+
+  /* ---------- 八字合盤與共同的緣分年 ---------- */
+  ZW.baziSynastry = function (A, B, a, b, nb, ctx) {
+    const EL = ZW.EL, o = [], rel = ZW.zodiacRel, RT = { 同: '同類', 六合: '六合', 三合: '三合', 六沖: '六沖', 六害: '六害', '': '無明顯合沖' };
+    const he = mod(a.ds - b.ds, 10) === 5 || mod(b.ds - a.ds, 10) === 5;
+    const er = (x, y) => x === y ? '同類' : mod(y - x, 5) === 1 ? '你生對方' : mod(x - y, 5) === 1 ? '對方生你' : mod(y - x, 5) === 2 ? '你剋對方' : '對方剋你';
+    const E = er(a.me, b.me), rd = rel(a.db, b.db), ry = rel(A.yb, B.yb);
+    o.push('<h4>八字合盤</h4>' + P(`你的八字是 ${a.list.map(x => x.gz).join(' ')}，日主${STEMS[a.ds]}${EL[a.me]}；${nb}的八字是 ${b.list.map(x => x.gz).join(' ')}，日主${STEMS[b.ds]}${EL[b.me]}。八字合盤先看三件事：兩人的日主（本人）、日支（配偶宮）與五行能不能互補。`));
+    o.push(P(`日主：${STEMS[a.ds]}與${STEMS[b.ds]}${he ? '是天干五合，屬於一見就有默契、彼此容易被對方吸引的組合' : '沒有天干相合'}。五行上${EL[a.me]}與${EL[b.me]}是「${E}」：${{ 同類: '你們本質相近，懂彼此，也容易在同一件事上互不相讓。', 你生對方: '你在關係裡比較常是付出、照顧的一方，對方會覺得被你撐著；記得也讓對方為你做點什麼。', 對方生你: '對方比較常是照顧你、給你力量的一方，你在對方身邊會比較放鬆；別把這份照顧當成理所當然。', 你剋對方: '你在關係裡比較強勢，容易不自覺地要求或管到對方；說話時多留一點餘地。', 對方剋你: '對方比較強勢，你會覺得被要求、被管；把感受說出來，比默默忍住好。' }[E]}`));
+    o.push(P(`日支：你的${BR[a.db]}與${nb}的${BR[b.db]}是${RT[rd]}。${{ 同: '配偶宮相同，生活習慣與對家的想像很接近。', 六合: '配偶宮六合，是相處最順、最容易走進生活的組合。', 三合: '配偶宮三合，生活上能互相配合，一起做事很順手。', 六沖: '配偶宮相沖，生活節奏與習慣差異大，住在一起之後的磨合會比戀愛時多。', 六害: '配偶宮相害，表面和氣，私下容易累積說不出口的不滿，要定期把話說開。', '': '配偶宮沒有明顯的合或沖，生活上的契合度要靠相處慢慢磨。' }[rd]}生肖上你屬${ZW.ZODIAC[A.yb]}、${nb}屬${ZW.ZODIAC[B.yb]}，是${RT[ry]}。`));
+    const give = Math.round(b.w[a.primary] / b.total * 100), take = Math.round(a.w[b.primary] / a.total * 100);
+    o.push(P(`五行互補：你最需要的是${EL[a.primary]}，${nb}的命局裡${EL[a.primary]}約占 ${give}%；${nb}最需要的是${EL[b.primary]}，你的命局裡${EL[b.primary]}約占 ${take}%。${give >= 25 && take >= 25 ? '兩個人正好帶著對方需要的東西，是互補型的組合，在一起會讓彼此的運勢都順一點。' : give >= 25 ? `${nb}身上帶著你需要的五行，跟對方在一起你會比較順；反過來，你能給對方的比較少，要在其他地方多付出。` : take >= 25 ? `你身上帶著${nb}需要的五行，對方跟你在一起會比較順；你自己需要的則要從別處補。` : '兩人都沒有特別帶著對方需要的五行，互補性不強，相處靠的是個性與經營。'}`));
+    if (ctx.orient !== '同性') {
+      const mine = a.spouseEl === b.me, theirs = b.spouseEl === a.me;
+      o.push(P(`配偶星：你的配偶星是${EL[a.spouseEl]}，${nb}的日主是${EL[b.me]}，${mine ? '正好是你命中的配偶星' : '不是你的配偶星的五行'}；${nb}的配偶星是${EL[b.spouseEl]}，你的日主是${EL[a.me]}，${theirs ? '正好是對方命中的配偶星' : '不是對方配偶星的五行'}。${mine && theirs ? '雙方都是對方命中的那一型，這在合盤裡很少見。' : mine || theirs ? '有一方是對方命中的那一型，吸引力是單向比較強的。' : '彼此都不是對方命中預設的那一型，緣分多半來自相處而非直覺。'}`));
+    }
+    const y0 = ctx.now || new Date().getFullYear(), me = x => ctx.orient === '同性' ? ZW.brElem(x.db) : x.spouseEl, la = ZW.loveYears(A, a, me(a), y0, 10).all, lb = ZW.loveYears(B, b, me(b), y0, 10).all;
+    const both = la.map((x, i) => ({ y: x.y, gz: x.gz, v: x.v + lb[i].v, ok: x.v >= 2 && lb[i].v >= 2 })).sort((p, q) => q.v - p.v || p.y - q.y).slice(0, 3).sort((p, q) => p.y - q.y);
+    o.push('<h4>兩人共同的緣分年</h4>' + P(`把兩個人往後十年的緣分引動加在一起看，雙方同時被引動、最適合讓關係往前走一步（確認關係、同居、訂婚或結婚）的年份是 ${join(both.map(x => `${x.y} 年（${x.gz}）`))}。${both.some(x => x.ok) ? `其中 ${join(both.filter(x => x.ok).map(x => x.y + ' 年'))}兩人各自的盤都明顯被引動，是最好的時機。` : '這幾年是相對較好的時機，但兩人的盤沒有在同一年都被強烈引動，進展靠的是你們自己決定，而不是等時機。'}`));
+    return o.join('');
   };
 })();

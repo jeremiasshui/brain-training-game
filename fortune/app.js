@@ -113,12 +113,13 @@
       (Math.abs(((rt.solar.split(' ')[1].slice(0, 2) * 60 + +rt.solar.slice(-2) + 60) % 120) - 0) < 12 || ((rt.solar.split(' ')[1].slice(0, 2) * 60 + +rt.solar.slice(-2) + 60) % 120) > 108 ? '請注意：這個時間距離時辰交界不到十二分鐘，出生時間只要有些微誤差，時辰就可能不同，建議也排一次相鄰時辰的命盤比較看看哪一張更貼近自己。' : '');
     const now = new Date(), today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     const pp = profiles.find(x => pid(x) === $('partner').value), extra = { info, bazi, ai: store.get('ziyuan.ai.' + pid(p), null), pid: pid(p), ctx: { who: who || '你', place: p.placeName, lon: p.lon, orient: p.orient, rel: p.rel, job: p.job, concern: esc(p.concern || ''), concernRaw: p.concern || '', now: now.getFullYear() } };
-    if (pp) extra.partner = { name: pp.name || '對方', chart: compute(pp).chart };
+    if (pp) { const cp = compute(pp); extra.partner = { name: pp.name || '對方', chart: cp.chart, bazi: cp.bazi }; }
     const r = ZW.buildReport(c, who, today, extra);
     $('count').textContent = r.count.toLocaleString('en-US');
     $('toc').innerHTML = r.secs.map(s => `<a href="#${s.id}">${esc(s.title)}</a>`).join('');
     $('report').innerHTML = r.secs.map((s, n) => `<article id="${s.id}"><h3><span>${String(n + 1).padStart(2, '0')}</span>${esc(s.title)}</h3>${s.html}</article>`).join('');
     lastTheme = { theme: r.theme, facts: ZW.factSheet(c, bazi, extra.ctx, r.theme.k) };
+    lastChart = c; if (scroll) { calY = now.getFullYear(); calM = now.getMonth() + 1; } drawCal(); drawChat();
     const done = store.get('ziyuan.todo.' + pid(p), []);
     document.querySelectorAll('.todo input').forEach(x => { x.checked = done.includes(+x.dataset.i); });
     $('aiclear').hidden = !extra.ai;
@@ -127,7 +128,7 @@
 
   }
 
-  let lastTheme = null, busy = false, guessed = false;
+  let lastTheme = null, busy = false, guessed = false, lastChart = null, calY = 0, calM = 0;
   $('report').addEventListener('change', e => {
     if (!e.target.matches('.todo input') || !current) return;
     store.set('ziyuan.todo.' + pid(current), [...document.querySelectorAll('.todo input:checked')].map(x => +x.dataset.i));
@@ -179,7 +180,97 @@
     if (v !== 'b') { const P = ZW.PLACES[+v]; l.name = P[0]; l.lon = P[1]; l.tz = P[2]; }
     try { $('lookOut').innerHTML = ZW.lookup(compute(current).chart, { y, m, d, hh, mm }, l); } catch (_) { $('lookOut').innerHTML = '<p>這個日期超出可換算的範圍。</p>'; }
   }
-  $('qgo').onclick = lookup; $('qnow').onclick = () => { setNow(); lookup(); };
+  $('qgo').onclick = () => { lookup(); drawCal(); }; $('qnow').onclick = () => { setNow(); const n = new Date(); calY = n.getFullYear(); calM = n.getMonth() + 1; lookup(); drawCal(); };
+
+  /* ---------- 擇日月曆 ---------- */
+  const LDN = n => n === 10 ? '初十' : n === 20 ? '二十' : n === 30 ? '三十' : '初十廿'[Math.floor((n - 1) / 10)] + '一二三四五六七八九'[(n - 1) % 10];
+  function drawCal() {
+    if (!lastChart || !calY) return;
+    const first = new Date(Date.UTC(calY, calM - 1, 1)), days = new Date(Date.UTC(calY, calM, 0)).getUTCDate(), n = new Date();
+    const todayS = `${n.getFullYear()}-${ZW.pad(n.getMonth() + 1)}-${ZW.pad(n.getDate())}`, sel = $('qd').value, cells = [];
+    for (let i = 0; i < first.getUTCDay(); i++) cells.push('<span></span>');
+    for (let d = 1; d <= days; d++) {
+      let lv = '平', ld = '';
+      try { const f = ZW.flow(lastChart, calY, calM, d); lv = ZW.rate(lastChart, f.day.b, f.day.s).level; ld = f.lunar.day === 1 ? (f.lunar.leap ? '閏' : '') + f.lunar.month + '月' : LDN(f.lunar.day); } catch (_) { }
+      const ds = `${calY}-${ZW.pad(calM)}-${ZW.pad(d)}`;
+      cells.push(`<button type="button" data-d="${ds}" class="g${lv}${ds === todayS ? ' today' : ''}${ds === sel ? ' sel' : ''}" aria-label="${calM} 月 ${d} 日，流日${lv}">${d}<i>${ld}</i></button>`);
+    }
+    $('cal').innerHTML = `<div class="calh"><button type="button" data-m="-1" aria-label="上個月">‹</button><b>${calY} 年 ${calM} 月</b><button type="button" data-m="1" aria-label="下個月">›</button></div>` +
+      `<div class="calg">${'日一二三四五六'.split('').map(w => `<span class="wd">${w}</span>`).join('')}${cells.join('')}</div><div class="calk"><span class="k吉">吉</span><span>平</span><span class="k慎">慎</span><span>評等是相對的，只用來排行程輕重</span></div>`;
+  }
+  $('cal').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.m) { calM += +b.dataset.m; if (calM < 1) { calM = 12; calY--; } if (calM > 12) { calM = 1; calY++; } drawCal(); return; }
+    $('qd').value = b.dataset.d; if (!$('qt').value) $('qt').value = '12:00'; lookup(); drawCal();
+    $('lookOut').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  /* ---------- 問道長 ---------- */
+  let chatCtl = null;
+  const chatKey = () => 'ziyuan.chat.' + pid(current);
+  const chatBackend = () => sampleBackend || ($('akey').value.trim() ? ZW.aiKey($('akey').value.trim()) : null);
+  const bubble = (role, text) => `<div class="msg ${role === 'user' ? 'u' : 'a'}">${role === 'user' ? '' : '<b>雲樵道長</b>'}${esc(text)}</div>`;
+  function drawChat() {
+    if (!current || !lastTheme) return;
+    const turns = store.get(chatKey(), []), k = lastTheme.theme.k, y0 = new Date().getFullYear();
+    $('chatLog').innerHTML = turns.map(t => bubble(t.role, t.content)).join('');
+    const ly = k.love.top.find(t => t.y >= y0), q = [];
+    if (current.concern) q.push(`關於「${current.concern}」，我接下來三個月該怎麼做？`);
+    if (ly) q.push(`${ly.y} 年真的是我的緣分年嗎？那一年要注意什麼？`);
+    q.push(current.job === '正在找工作' || current.job === '目前沒有工作' ? '我適合往哪個方向找工作？哪幾個月比較順？' : '我現在的工作該繼續待，還是準備換？');
+    q.push('我今年最該先處理的是哪一件事？', '接下來哪幾個月適合做重要的決定？');
+    $('chips').innerHTML = q.map(x => `<button type="button">${esc(x)}</button>`).join('');
+    $('chatStat').textContent = chatBackend() ? '' : '在 claude.ai 打開這個頁面，或在上方「AI 撰寫」填入 API 金鑰之後，就可以問了。';
+  }
+  $('chips').onclick = e => { const b = e.target.closest('button'); if (b) { $('chatIn').value = b.textContent; $('chatIn').focus(); } };
+  async function ask() {
+    const q = $('chatIn').value.trim(), backend = chatBackend();
+    if (!current || !q || chatCtl) return;
+    if (!backend) return void ($('chatStat').textContent = '在 claude.ai 打開這個頁面，或在上方「AI 撰寫」填入 API 金鑰之後，就可以問了。');
+    const id = chatKey(), turns = store.get(id, []);
+    turns.push({ role: 'user', content: q }); store.set(id, turns.slice(-20)); $('chatIn').value = '';
+    $('chatLog').insertAdjacentHTML('beforeend', bubble('user', q) + '<div class="msg a wait" id="pending"><b>雲樵道長</b>正在看你的盤⋯⋯</div>');
+    const el = $('pending'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    chatCtl = new AbortController(); $('chatGo').disabled = true; $('chatStop').hidden = false; $('chatStat').textContent = '';
+    let send = turns.slice(-12); while (send.length && send[0].role !== 'user') send.shift();
+    const show = t => { el.classList.remove('wait'); el.innerHTML = '<b>雲樵道長</b>' + esc(t); };
+    try {
+      const text = await backend.chat(lastTheme.facts, send, show, chatCtl.signal);
+      show(text); el.removeAttribute('id'); turns.push({ role: 'assistant', content: text }); store.set(id, turns.slice(-20));
+    } catch (e) {
+      if (e.partial) { show(e.partial + '\n（回答到這裡中斷了）'); turns.push({ role: 'assistant', content: e.partial }); store.set(id, turns.slice(-20)); el.removeAttribute('id'); }
+      else el.remove();
+      $('chatStat').textContent = e.message;
+    }
+    chatCtl = null; $('chatGo').disabled = false; $('chatStop').hidden = true;
+  }
+  $('chatGo').onclick = ask;
+  $('chatIn').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) ask(); });
+  $('chatStop').onclick = () => chatCtl && chatCtl.abort();
+  $('chatClear').onclick = () => { if (current) arm($('chatClear'), '再按一次確認', () => { try { localStorage.removeItem(chatKey()); } catch (_) { } $('chatClear').textContent = '清除對話'; drawChat(); }); };
+
+  /* ---------- 下載命書 ---------- */
+  $('dl').onclick = async () => {
+    if (!current) return;
+    const box = $('result').cloneNode(true);
+    box.querySelectorAll('.panel,#toc,.bar,#dlStat,script').forEach(x => x.remove());
+    box.querySelectorAll('input').forEach(x => { if (x.checked) x.setAttribute('checked', ''); x.setAttribute('disabled', ''); });
+    const name = current.name || '命主', css = [...document.querySelectorAll('style')].map(x => x.textContent).join('\n');
+    const html = `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(name)}的命書｜紫垣命理</title>` +
+      `<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700;900&display=swap" rel="stylesheet"><style>${css}\n#result{display:block!important}</style></head>` +
+      `<body><main><section id="result" style="display:block;padding-top:28px">${box.innerHTML}</section></main><footer><div class="wrap">紫垣命理｜${new Date().toLocaleDateString('zh-TW')} 產生。命理內容僅供自我探索與參考。</div></footer></body></html>`;
+    const filename = `${name}的命書-紫垣命理.html`;
+    let dl = null;
+    try { dl = globalThis.claude && await globalThis.claude.use('downloads'); } catch (_) { }
+    if (dl) {
+      try { await dl.save({ filename, data: html }); $('dlStat').textContent = '已下載。'; }
+      catch (e) { $('dlStat').textContent = e && e.code === 'declined' ? '已取消下載。' : '這裡無法下載檔案，請在自己的瀏覽器打開頁面再試。'; }
+      return;
+    }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' })); a.download = `ziyuan-${current.birth.replace(/-/g, '')}.html`;   // 部分瀏覽器會丟掉中文檔名
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    $('dlStat').textContent = '已下載。用瀏覽器打開這個檔案，就能離線閱讀或列印。';
+  };
   $('qp').onchange = lookup;
   $('print').onclick = () => window.print();
 

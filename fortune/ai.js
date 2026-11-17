@@ -32,6 +32,16 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
 
   const IN_SHAPE = '請只回覆一個 JSON 物件，不要有任何其他文字，格式為：{"now":{"money":"…","work":"…","love":"…","home":"…","body":"…"},"faces":[{"outer":"…","inner":"…"}],"punch":{"not":"…","is":"…"}}';
   const CH_SHAPE = '請只回覆一個 JSON 物件，不要有任何其他文字，格式為：{"sections":[{"body":["…","…"],"quote":"…","mirror":["…"],"options":[{"choice":"…","cost":"…"},{"choice":"…","cost":"…"}]}]}';
+  const CHAT = `現在命主讀完命書，直接來問你問題。這是對話，不是寫命書。
+
+回答的方式：
+- 先用一兩句直接回答他問的事，不要先鋪陳。
+- 再說你在盤上看到的根據，點出是哪一宮、哪一顆星、哪一年或哪個月就好，不必把整張盤講一遍。
+- 最後給一個他這週或這個月就能做的具體建議。
+- 三到六段，每段不超過一百二十字。純文字，不用 markdown 標題或清單符號，不用破折號。
+- 他問到某一天或某個時辰，告訴他可以在頁面上的「擇日月曆」點那一天看十二時辰；你手上的資料只到流月。
+- 他的問題和命理無關，或命盤資料回答不了，就直說，再把話題帶回他可以做的事。
+- 同樣遵守前面所有的界線：不寫確定會發生的事件、確切日期、金額與壽命，不下醫療診斷，不說「一定」「注定」。`;
   const S = v => typeof v === 'string' ? v.trim() : '', A = v => Array.isArray(v) ? v : [];
   const cleanSec = x => { x = x && typeof x === 'object' ? x : {}; return { body: A(x.body).map(S).filter(Boolean), quote: S(x.quote), mirror: A(x.mirror).map(S).filter(Boolean), options: A(x.options).map(o => ({ choice: S(o && o.choice), cost: S(o && o.cost) })).filter(o => o.choice && o.cost) }; };
   const cleanIntro = x => {
@@ -52,6 +62,10 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
       ask: async (facts, task, schema, shape) => {
         try { return await sample.json(SYSTEM + '\n\n命盤事實：\n' + facts + '\n\n' + task + '\n\n' + shape, { modelTier: 'complex' }); }
         catch (e) { throw new Error(CODE[e && e.code] || '連線中斷，再按一次會從這裡接著寫。'); }
+      },
+      chat: async (facts, turns, onText, signal) => {
+        try { return (await sample([{ role: 'user', content: SYSTEM + '\n\n命盤事實：\n' + facts + '\n\n' + CHAT }, ...turns], { cache: false, onText: ({ text }) => onText(text), signal })).text; }
+        catch (e) { const err = new Error(e && e.code === 'cancelled' ? '已停止。' : (CODE[e && e.code] || '連線中斷，請再問一次。')); err.partial = e && e.text; throw err; }
       }
     };
   };
@@ -93,6 +107,27 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
           if (msg.stop_reason === 'max_tokens') throw new Error('這一段的輸出超過長度上限');
           return JSON.parse(msg.content.filter(b => b.type === 'text').map(b => b.text).join(''));
         } catch (e) { throw new Error(explain(e)); }
+      },
+      chat: async (facts, turns, onText, signal) => {
+        let text = '';
+        try {
+          if (!sdk) { const m = await import(SDK_URL); sdk = Object.assign({}, m, { Client: m.default || m.Anthropic }); }
+          c = c || new sdk.Client({ apiKey: key, dangerouslyAllowBrowser: true });
+          const base = { model: MODEL, max_tokens: 8000, thinking: { type: 'adaptive' }, output_config: { effort: 'medium' },
+            system: [{ type: 'text', text: SYSTEM + '\n\n' + CHAT }, { type: 'text', text: '命盤事實：\n' + facts, cache_control: { type: 'ephemeral' } }], messages: turns };
+          const run = async params => {
+            const st = params.betas ? c.beta.messages.stream(params, { signal }) : c.messages.stream(params, { signal });
+            st.on('text', d => { text += d; onText(text); });
+            return st.finalMessage();
+          };
+          let msg;
+          try { msg = await run(Object.assign({ betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' }, base)); }
+          catch (e) { if (!(e instanceof sdk.BadRequestError) || text) throw e; msg = await run(base); }
+          if (msg.stop_reason === 'refusal') throw new Error('道長不回答這個問題，換個問法試試。');
+          return text;
+        } catch (e) {
+          const err = new Error(signal && signal.aborted ? '已停止。' : e instanceof Error && !sdk ? '無法載入 Anthropic SDK，請確認網路連線。' : explain(e)); err.partial = text; throw err;
+        }
       }
     };
   };

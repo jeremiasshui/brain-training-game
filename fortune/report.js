@@ -184,7 +184,7 @@ var ZW = globalThis.ZW = globalThis.ZW || {};
     secs.push({ id: 'decade', title: '十年大限', html: decadeSection(chart, age) });
     secs.push({ id: 'year', title: '流年與流月', html: ZW.yearSection(chart, nowYear) });
     secs.push({ id: 'days', title: '逐日流日', html: ZW.daysSection(chart, today, 60) });
-    if (extra.partner) secs.push({ id: 'syn', title: '合盤｜' + extra.partner.name, html: ZW.synastry(chart, extra.partner.chart, extra.partner.name) });
+    if (extra.partner) secs.push({ id: 'syn', title: '合盤｜' + extra.partner.name, html: ZW.synastry(chart, extra.partner.chart, extra.partner.name, extra.bazi, extra.partner.bazi, extra.ctx) });
     if (extra.bazi) { const bz = ZW.baziReport(extra.bazi, chart, extra.ctx); secs.unshift(...bz.slice(0, 5)); secs.push(bz[5]); }
     secs.push({ id: 'closing', title: '結語與說明', html: closing() });
     let theme = null;
